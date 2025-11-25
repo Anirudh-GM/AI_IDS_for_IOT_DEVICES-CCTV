@@ -1,0 +1,16 @@
+{
+  "time": "2025-11-25 17:47:38",
+  "camera_id": "cam1",
+  "reasons": [
+    "camera_frozen"
+  ],
+  "clip": "evidence\\cam1_20251125_174738_event.mp4",
+  "snapshots": [
+    "evidence\\cam1_1764073058_pre.jpg",
+    "evidence\\cam1_1764073058_mid.jpg",
+    "evidence\\cam1_1764073058_post.jpg"
+  ],
+  "mean_brightness": 146.8115234375,
+  "laplacian_var": 203.2034244789971,
+  "people_count": 0
+}

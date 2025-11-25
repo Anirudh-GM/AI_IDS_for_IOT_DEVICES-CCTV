@@ -1,0 +1,34 @@
+{
+  "time": "2025-11-25 17:03:50",
+  "camera_id": "cam1",
+  "reasons": [
+    "blur_detected",
+    "camera_frozen",
+    "person_detected",
+    "inject_attack_active"
+  ],
+  "clip": "evidence\\cam1_20251125_170349_blur_detected_camera_frozen_person_detected_inject_attack_active.mp4",
+  "clip_sha256": "75c25a219ce9f95f8c2d6e87c3a68fc7f2d797ae859cc8816c06f291f5734a09",
+  "snapshots": [
+    "evidence\\cam1_20251125_170350_pre.jpg",
+    "evidence\\cam1_20251125_170350_mid.jpg",
+    "evidence\\cam1_20251125_170350_post.jpg"
+  ],
+  "snapshot_sha256": {
+    "cam1_20251125_170350_pre.jpg": "1e1e34f65fe4e3c36d54adea5f139d4a73b35cbe2b829a4290a680d9732084aa",
+    "cam1_20251125_170350_mid.jpg": "104a3bf22715085879f6e9534b159c16b7a863f39b3b87e51c23fe6c6463f58a",
+    "cam1_20251125_170350_post.jpg": "d863a6cc5c838d4aa8b50886e61ff0864863ba1312e858629ea63a24a2c0e122"
+  },
+  "mean_brightness": 142.55166341145832,
+  "laplacian_var": 38.666757506264574,
+  "people_count": 1,
+  "boxes": [
+    {
+      "x": 122,
+      "y": 104,
+      "w": 140,
+      "h": 280,
+      "score": 0.5747621045447886
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "time": "2025-11-25 17:31:54",
+  "camera_id": "cam1",
+  "reasons": [
+    "blur_detected",
+    "camera_frozen"
+  ],
+  "clip": "evidence\\cam1_20251125_173154_blur_detected_camera_frozen.mp4",
+  "clip_sha256": "466cc02f55032e50948cbafa1d87190b4357f1f30df459cd6c024ce64b8a8ed5",
+  "snapshots": [
+    "evidence\\cam1_20251125_173154_pre.jpg",
+    "evidence\\cam1_20251125_173154_mid.jpg",
+    "evidence\\cam1_20251125_173154_post.jpg"
+  ],
+  "snapshot_sha256": {
+    "cam1_20251125_173154_pre.jpg": "c3d5d8581438d0366531470c683a0be88a0a47e2f62a78c86ebf7df6faf4bed7",
+    "cam1_20251125_173154_mid.jpg": "c207606e7d8f7323e794d469f183231c59b533985362250686987a6486fb8710",
+    "cam1_20251125_173154_post.jpg": "b8f27a5c15ba9e25f5f100726c3f90a2f983807c5e94e05a1aeee158fbcb1700"
+  },
+  "mean_brightness": 112.35576497395833,
+  "laplacian_var": 59.43279912817214,
+  "people_count": 0,
+  "boxes": []
+}

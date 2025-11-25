@@ -1,0 +1,212 @@
+import cv2
+import time
+import os
+import json
+import hashlib
+import threading
+import queue
+import winsound
+from collections import deque
+from flask import Flask, request, jsonify, Response, send_from_directory
+
+# ----------------- CONFIG -----------------
+CAMERA_SOURCE = 0
+OUTPUT_DIR = "evidence"
+
+PRE_SECONDS = 5
+POST_SECONDS = 5
+FPS = 10
+
+FRAME_WIDTH = 640
+BRIGHTNESS_COVER_THR = 40
+BLUR_LAPLACE_THR = 80
+FREEZE_DIFF_THR = 100
+FREEZE_CONSEC = 8
+# ------------------------------------------
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+app = Flask(__name__)
+
+manual_attack = False
+inject_attack = False
+_flags_lock = threading.Lock()
+
+clients = []
+clients_lock = threading.Lock()
+
+def push_event(event_type, payload):
+    msg = {
+        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "type": event_type,
+        "payload": payload
+    }
+    s = json.dumps(msg)
+    print("[EVENT]", s)
+
+    # ?? Sound alert for detection
+    if event_type == "detection":
+        try:
+            winsound.Beep(1200, 200)
+        except:
+            pass
+
+    # Send to dashboard
+    with clients_lock:
+        for q in list(clients):
+            try:
+                q.put(s, block=False)
+            except:
+                pass
+
+
+def resize_keep_aspect(frame, width=FRAME_WIDTH):
+    h, w = frame.shape[:2]
+    if w == width:
+        return frame
+    r = width / float(w)
+    return cv2.resize(frame, (width, int(h * r)))
+
+
+def init_hog_detector():
+    hog = cv2.HOGDescriptor()
+    hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+    return hog
+
+
+def detect_people_hog(hog, frame):
+    rects, weights = hog.detectMultiScale(frame, winStride=(8,8), padding=(8,8), scale=1.05)
+    boxes = []
+    for (x,y,w,h), wt in zip(rects, weights):
+        boxes.append((x,y,w,h,float(wt)))
+    return boxes
+
+
+@app.route('/remote_attack', methods=['POST', 'GET'])
+def remote_attack():
+    global manual_attack, inject_attack
+    if request.method == "GET":
+        return jsonify({"manual": manual_attack, "inject": inject_attack})
+
+    data = request.get_json(force=True, silent=True) or {}
+
+    with _flags_lock:
+        if 'manual' in data:
+            manual_attack = bool(data['manual'])
+        if 'inject' in data:
+            inject_attack = bool(data['inject'])
+        if 'toggle_manual' in data:
+            manual_attack = not manual_attack
+        if 'toggle_inject' in data:
+            inject_attack = not inject_attack
+
+    push_event("attack_flags_changed", {
+        "manual": manual_attack,
+        "inject": inject_attack
+    })
+    return jsonify({"status": "ok"})
+
+
+@app.route('/status')
+def status():
+    return jsonify({"manual": manual_attack, "inject": inject_attack})
+
+
+@app.route('/events')
+def sse_events():
+    def stream(q):
+        while True:
+            msg = q.get()
+            yield f"data: {msg}\n\n"
+
+    q = queue.Queue()
+
+    with clients_lock:
+        clients.append(q)
+
+    q.put(json.dumps({
+        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "type": "init",
+        "payload": {"manual": manual_attack, "inject": inject_attack}
+    }))
+
+    return Response(stream(q), mimetype='text/event-stream')
+
+
+def camera_loop():
+    cap = cv2.VideoCapture(CAMERA_SOURCE)
+    if not cap.isOpened():
+        print("ERROR: Camera not found!")
+        return
+
+    hog = init_hog_detector()
+    prev_gray = None
+    freeze_count = 0
+    frame_buffer = deque(maxlen=PRE_SECONDS * FPS)
+    last_event_time = 0
+
+    print("Camera running… (no popup window)")
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            time.sleep(0.2)
+            continue
+
+        frame = resize_keep_aspect(frame)
+        cv2.imwrite("latest.jpg", frame)
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        brightness = gray.mean()
+        covered = brightness < BRIGHTNESS_COVER_THR
+
+        lap = cv2.Laplacian(gray, cv2.CV_64F).var()
+        blurred = lap < BLUR_LAPLACE_THR
+
+        freeze_event = False
+        if prev_gray is not None:
+            diff = cv2.absdiff(gray, prev_gray).mean()
+            if diff < FREEZE_DIFF_THR:
+                freeze_count += 1
+            else:
+                freeze_count = 0
+            if freeze_count >= FREEZE_CONSEC:
+                freeze_event = True
+        prev_gray = gray
+
+        boxes = detect_people_hog(hog, frame)
+        people = len(boxes) > 0
+
+        with _flags_lock:
+            m_attack = manual_attack
+            i_attack = inject_attack
+
+        reasons = []
+        if covered: reasons.append("camera_covered")
+        if blurred: reasons.append("blur_detected")
+        if freeze_event: reasons.append("camera_frozen")
+        if people: reasons.append("person_detected")
+        if m_attack: reasons.append("manual_attack_active")
+        if i_attack: reasons.append("inject_attack_active")
+
+        now = time.time()
+        if reasons and now - last_event_time > 6:
+            push_event("detection", {
+                "reasons": reasons,
+                "brightness": brightness,
+                "blur": lap,
+                "people": people
+            })
+            last_event_time = now
+
+        time.sleep(1.0 / FPS)
+
+
+if __name__ == '__main__':
+    t = threading.Thread(target=camera_loop, daemon=True)
+    t.start()
+    app.run(host='127.0.0.1', port=5000, threaded=True)
+
+@app.route('/dashboard')
+def dashboard():
+    return send_from_directory(os.getcwd(), 'dashboard.html')
+

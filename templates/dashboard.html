@@ -1,0 +1,93 @@
+﻿<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8'>
+  <title>AI IDS Dashboard</title>
+  <style>
+    body{background:#0d1117;color:#e6edf3;font-family:Arial;text-align:center;padding:18px;}
+    h1{color:#2ee6b6}
+    #camera{border:3px solid #2ee6b6;border-radius:8px;width:68%;max-width:900px}
+    button{padding:10px 18px;margin:8px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+    .start{background:#22c55e;color:#fff} .stop{background:#ef4444;color:#fff}
+    .manual{background:#f59e0b;color:#111} .inject{background:#6366f1;color:#fff}
+    #status{margin-top:10px;color:#60a5fa}
+    #alert{margin-top:8px;color:#ff6b6b;font-weight:700}
+    #log{margin-top:14px; text-align:left; width:70%; max-width:900px; margin-left:auto;margin-right:auto; background:#071029; padding:12px; border-radius:6px; height:160px; overflow:auto;}
+    .row{font-family:monospace; font-size:14px; color:#cbd5e1}
+  </style>
+</head>
+<body>
+  <h1>🧠 AI IDS — Camera Monitor</h1>
+
+  <img id='camera' src='{{ url_for('video_feed') }}' alt='camera feed'>
+
+  <div>
+    <button class='start' onclick='startDetection()'>▶ Start Detection</button>
+    <button class='stop' onclick='stopDetection()'>⏹ Stop Detection</button>
+    <button class='manual' onclick='toggleManual()'>A: Toggle Manual Attack</button>
+    <button class='inject' onclick='injectAttack()'>I: Inject Attack</button>
+  </div>
+
+  <p id='status'>Status: Idle</p>
+  <p id='alert'></p>
+
+  <div id='log'><div id='logInner'>Detection Log:</div></div>
+
+  <audio id='alertSound' src='https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg' loop></audio>
+
+  <script>
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'a' || e.key === 'A') toggleManual();
+      if (e.key === 'i' || e.key === 'I') injectAttack();
+    });
+
+    async function startDetection(){
+      await fetch('/start_detection', {method:'POST'});
+      document.getElementById('status').textContent = 'Status: Running';
+      document.getElementById('alert').textContent = '';
+    }
+    async function stopDetection(){
+      await fetch('/stop_detection', {method:'POST'});
+      document.getElementById('status').textContent = 'Status: Stopped';
+      document.getElementById('alertSound').pause(); document.getElementById('alertSound').currentTime = 0;
+    }
+    async function toggleManual(){
+      const r = await fetch('/toggle_manual', {method:'POST'}); const j=await r.json();
+      document.getElementById('status').textContent = 'Manual Attack: ' + (j.manual ? 'ON' : 'OFF');
+      addLog('Manual attack toggled: ' + (j.manual ? 'ON' : 'OFF'));
+    }
+    async function injectAttack(){
+      const r = await fetch('/inject', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({duration:8})});
+      const j = await r.json();
+      addLog('Injected attack for ' + j.duration + 's');
+    }
+
+    function addLog(line){
+      const inner = document.getElementById('logInner');
+      inner.textContent = new Date().toLocaleTimeString() + ' → ' + line + '\\n' + inner.textContent;
+    }
+
+    setInterval(async ()=>{
+      try{
+        const r = await fetch('/get_status'); const j = await r.json();
+        document.getElementById('status').textContent = j.running ? 'Status: Running' : 'Status: Stopped';
+        if (j.manual_attack) document.getElementById('status').textContent += ' | Manual=ON';
+        if (j.inject_attack) document.getElementById('status').textContent += ' | Inject=ON';
+
+        if (j.intrusion_detected){
+          document.getElementById('alert').textContent = '⚠️ '+ (j.attack_type || 'Intrusion') + (j.device ? ' on '+j.device : '');
+          if (j.timestamp){
+            addLog('DETECTED: ' + j.attack_type + ' on ' + (j.device || 'unknown') + ' @ ' + j.timestamp);
+          } else {
+            addLog('DETECTED: ' + (j.attack_type || 'Intrusion'));
+          }
+          const s=document.getElementById('alertSound'); if (s.paused) s.play();
+        } else {
+          document.getElementById('alert').textContent = '';
+          const s=document.getElementById('alertSound'); if (!s.paused) { s.pause(); s.currentTime = 0; }
+        }
+      }catch(e){ console.log('status fetch err', e); }
+    }, 800);
+  </script>
+</body>
+</html>
