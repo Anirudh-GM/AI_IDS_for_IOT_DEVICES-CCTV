@@ -1,72 +1,99 @@
+# realtime_video_ids.py
+# Stateful IDS that triggers a sustained-obstruction alert after N seconds.
 import cv2
+import numpy as np
 import time
-import pygame
-import random
-from datetime import datetime
-import sqlite3
 
-# Initialize Pygame Mixer
-pygame.mixer.init()
+class IDSState:
+    def __init__(self,
+                 obstruction_seconds=12,
+                 motion_diff_threshold=2500,
+                 brightness_low=25,
+                 cooldown_seconds=300):
+        """
+        obstruction_seconds: seconds of continuous dark+no-motion to alert
+        motion_diff_threshold: pixel count threshold to consider there is motion
+        brightness_low: below this mean brightness consider 'dark/covered'
+        cooldown_seconds: ignore new alerts for this many seconds after an alert
+        """
+        self.obstruction_seconds = obstruction_seconds
+        self.motion_diff_threshold = motion_diff_threshold
+        self.brightness_low = brightness_low
+        self.cooldown_seconds = cooldown_seconds
 
-# Use the fixed WAV file
-ALERT_SOUND = "alert_fixed.wav"
+        self._prev_gray = None
+        self._obstruction_start = None
+        self._last_alert_ts = 0
 
-# Database connection
-conn = sqlite3.connect("intrusion_logs.db", check_same_thread=False)
-cursor = conn.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS intrusions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp TEXT,
-    device TEXT,
-    attack_type TEXT
-)
-""")
-conn.commit()
+    def reset(self):
+        self._prev_gray = None
+        self._obstruction_start = None
+        self._last_alert_ts = 0
 
-# Simulated IoT devices and attacks
-devices = ["Camera", "Router", "Smart Light", "Thermostat"]
-attacks = ["Port Scan", "Malware Injection", "Data Breach"]
+    def process_frame(self, frame):
+        """
+        Input: BGR frame
+        Returns: annotated_frame (BGR), alert_bool, alert_reason (str or None)
+        """
+        now = time.time()
 
-print("🔍 Real-time AI-based Intrusion Detection started...\n")
+        # If in cooldown, annotate and return no alert
+        if now - self._last_alert_ts < self.cooldown_seconds:
+            remaining = int(self.cooldown_seconds - (now - self._last_alert_ts))
+            return self._annotate(frame, note=f"Cooldown {remaining}s"), False, None
 
-try:
-    cap = cv2.VideoCapture(0)
+        # downscale for speed
+        h, w = frame.shape[:2]
+        small = cv2.resize(frame, (max(160, int(w*0.5)), max(120, int(h*0.5))))
+        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+        gray_blur = cv2.GaussianBlur(gray, (5,5), 0)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        mean_brightness = float(np.mean(gray_blur))
 
-        # Simulate random intrusion event
-        if random.random() < 0.3:
-            device = random.choice(devices)
-            attack = random.choice(attacks)
-            timestamp = datetime.now().strftime("[%H:%M:%S]")
-            print(f"{timestamp} {device} → {attack}")
+        # initialize previous
+        if self._prev_gray is None:
+            self._prev_gray = gray_blur.copy()
+            return self._annotate(frame, note="Initializing IDS..."), False, None
 
-            try:
-                sound = pygame.mixer.Sound(ALERT_SOUND)
-                sound.play()
-            except Exception as e:
-                print(f"⚠️ Sound error: {e}")
+        diff = cv2.absdiff(self._prev_gray, gray_blur)
+        motion_pixels = int(np.sum(diff > 25))
 
-            cursor.execute("INSERT INTO intrusions (timestamp, device, attack_type) VALUES (?, ?, ?)",
-                           (timestamp, device, attack))
-            conn.commit()
-            print("✅ Logged in DB")
+        is_dark = mean_brightness < self.brightness_low
+        is_no_motion = motion_pixels < self.motion_diff_threshold
 
-        # Display camera feed
-        cv2.imshow("AI-Based IDS for IoT Devices", frame)
+        # If conditions for obstruction are met, start timing
+        if is_dark and is_no_motion:
+            if self._obstruction_start is None:
+                self._obstruction_start = now
+            elapsed = now - self._obstruction_start
+            if elapsed >= self.obstruction_seconds:
+                # Fire alert and set cooldown timestamp
+                self._last_alert_ts = now
+                return self._annotate(frame, alert=True, reason="Sustained obstruction", brightness=int(mean_brightness), motion=motion_pixels), True, "Sustained obstruction"
+            else:
+                return self._annotate(frame, note=f"Cover candidate: {int(elapsed)}s/{self.obstruction_seconds}s", brightness=int(mean_brightness), motion=motion_pixels), False, None
+        else:
+            # Clear obstruction timer
+            self._obstruction_start = None
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("\n🛑 Intrusion Detection stopped manually.")
-            break
+        self._prev_gray = gray_blur.copy()
+        return self._annotate(frame, note="OK", brightness=int(mean_brightness), motion=motion_pixels), False, None
 
-except KeyboardInterrupt:
-    print("\n🛑 Intrusion Detection stopped manually.")
-
-finally:
-    cap.release()
-    cv2.destroyAllWindows()
-    conn.close()
+    def _annotate(self, frame, alert=False, reason=None, note=None, brightness=None, motion=None):
+        out = frame.copy()
+        h, w = out.shape[:2]
+        # draw status bar
+        cv2.rectangle(out, (0,0), (w, 36), (0,0,0), -1)
+        status = "ALERT" if alert else "OK"
+        color = (0,0,255) if alert else (0,255,0)
+        cv2.putText(out, f"Status: {status}", (10,24), cv2.FONT_HERSHEY_SIMPLEX, 0.75, color, 2)
+        y = 28
+        if reason:
+            cv2.putText(out, f"Reason: {reason}", (150,24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+        if note:
+            cv2.putText(out, str(note), (10, h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,200), 1)
+        if brightness is not None:
+            cv2.putText(out, f"B:{brightness}", (w-150,24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,200), 1)
+        if motion is not None:
+            cv2.putText(out, f"M:{motion}", (w-90,24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,200), 1)
+        return out

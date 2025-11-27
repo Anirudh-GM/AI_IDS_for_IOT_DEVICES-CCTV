@@ -1,0 +1,154 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AI IDS — Camera Monitor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <style>
+    :root{
+      --bg:#0f1113; --card:#061226; --muted:#9fb0c9; --accent:#2fe6b0;
+      --btn-green:#2ecc71; --btn-red:#e74c3c; --btn-yellow:#f39c12; --btn-blue:#6c5ce7;
+    }
+    body{background:var(--bg); color:#e8eef6; font-family:Inter, Arial, sans-serif; margin:0; padding:32px; text-align:center;}
+    h1{color:var(--accent); margin:0 0 18px; font-weight:600;}
+    .container{max-width:960px; margin:0 auto;}
+    .camera-wrap{background:transparent; display:inline-block; padding:8px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.6);}
+    #camera{width:640px; height:480px; border-radius:8px; border:4px solid #12e6b7; display:block; background:#000;}
+    .controls{margin-top:14px; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap;}
+    button{border:none; padding:10px 14px; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 6px 14px rgba(0,0,0,0.4);}
+    .btn-green{background:var(--btn-green); color:#073;}.btn-red{background:var(--btn-red); color:#fff;}
+    .btn-yellow{background:var(--btn-yellow); color:#111;}.btn-blue{background:var(--btn-blue); color:#fff;}
+    .btn-muted{background:#28313a; color:var(--muted);}
+    #status{margin-top:14px; color:#79aefc; font-weight:600;}
+    #logBox{margin:22px auto 0; width:760px; background:linear-gradient(180deg,#04102a,#071230); padding:14px 18px; border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.6); text-align:left;}
+    #logBox h3{margin:0 0 8px; color:#9fc6ff;}
+    .logEntry{padding:8px 6px; border-bottom:1px solid rgba(255,255,255,0.03); color:#dbefff;}
+    .small{font-size:0.88rem; color:var(--muted);}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧠 AI IDS — Camera Monitor</h1>
+
+    <div class="camera-wrap">
+      <img id="camera" src="{{ url_for('video_feed') }}" alt="camera feed" />
+    </div>
+
+    <div class="controls" style="margin-top:16px;">
+      <button class="btn-green" id="startBtn">▶ Start Detection</button>
+      <button class="btn-red" id="stopBtn">■ Stop Detection</button>
+      <button class="btn-yellow" id="manualBtn">A: Toggle Manual Attack</button>
+      <button class="btn-blue" id="injectBtn">I: Inject Attack</button>
+      <button class="btn-muted" id="enableSoundBtn">🔊 Enable Sound</button>
+      <button class="btn-muted" id="openStream">📺 Open stream</button>
+    </div>
+
+    <div id="status">Status: <span id="statusText">Loading...</span></div>
+
+    <div id="logBox">
+      <h3>Detection Log:</h3>
+      <div id="logContent" style="max-height:320px; overflow:auto;"></div>
+    </div>
+  </div>
+
+  <!-- AUDIO: first try local static file, fallback to hosted sound -->
+  <audio id="siren" preload="auto">
+    <source src="{{ url_for('static', filename='alert_fixed.wav') }}" type="audio/wav">
+    <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" type="audio/ogg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <script>
+    // -------------------------
+    // Button wiring
+    // -------------------------
+    document.getElementById('startBtn').onclick = ()=>fetch('/start_detection',{method:'POST'});
+    document.getElementById('stopBtn').onclick = ()=>fetch('/stop_detection',{method:'POST'});
+    document.getElementById('manualBtn').onclick = async ()=>{
+      const r = await fetch('/toggle_manual',{method:'POST'});
+      const j = await r.json();
+      console.log('manual', j);
+    };
+    document.getElementById('injectBtn').onclick = ()=>fetch('/toggle_inject',{method:'POST'});
+    document.getElementById('openStream').onclick = ()=>window.open('{{ url_for("video_feed") }}', '_blank');
+
+    // -------------------------
+    // Sound enable — required for autoplay
+    // -------------------------
+    const enableBtn = document.getElementById('enableSoundBtn');
+    const siren = document.getElementById('siren');
+    siren.loop = true;
+    siren.volume = 1.0;
+
+    enableBtn.onclick = async () => {
+      try {
+        // user gesture: play then pause — this unlocks audio in most browsers
+        await siren.play();
+        siren.pause();
+        siren.currentTime = 0;
+        enableBtn.disabled = true;
+        enableBtn.innerText = 'Sound Enabled';
+        console.log('Sound enabled by user gesture');
+      } catch(e) {
+        console.log('Enable sound failed:', e);
+        alert('Unable to enable sound. Click anywhere on the page to allow audio.');
+      }
+    };
+
+    // Also allow page click to enable if button fails
+    document.addEventListener('click', async function onceEnable(){ 
+      if(!enableBtn.disabled){
+        try{ await siren.play(); siren.pause(); siren.currentTime=0; enableBtn.disabled=true; enableBtn.innerText='Sound Enabled';}
+        catch(e){ }
+      }
+      document.removeEventListener('click', onceEnable);
+    });
+
+    // -------------------------
+    // Poll status & update UI
+    // -------------------------
+    let lastState = '';
+    async function refreshStatus(){
+      try{
+        const res = await fetch('/status');
+        const js = await res.json();
+
+        // update status text
+        document.getElementById('statusText').innerText = js.status + (js.inject_enabled ? ' | Inject=ON' : '');
+
+        // update log
+        const logDiv = document.getElementById('logContent');
+        logDiv.innerHTML = '';
+        (js.log || []).slice().reverse().forEach(e=>{
+          const d = document.createElement('div'); d.className='logEntry';
+          d.innerText = ${e.time} — ;
+          logDiv.appendChild(d);
+        });
+
+        // Siren control: play when status becomes ALERT, stop when cleared
+        if(js.status === 'ALERT' && lastState !== 'ALERT'){
+          // try to play — may be blocked if not enabled yet
+          siren.play().catch(err=>console.log('Siren play blocked:', err));
+        } else if(js.status !== 'ALERT' && lastState === 'ALERT'){
+          siren.pause(); siren.currentTime = 0;
+        }
+        lastState = js.status;
+      }catch(e){
+        console.log('status poll error', e);
+      } finally {
+        setTimeout(refreshStatus, 1000);
+      }
+    }
+
+    // start polling
+    refreshStatus();
+
+    // keyboard shortcuts: A = toggle manual, I = inject, S = enable sound
+    document.addEventListener('keydown', (ev)=>{
+      if(ev.key.toLowerCase() === 'a'){ document.getElementById('manualBtn').click(); }
+      if(ev.key.toLowerCase() === 'i'){ document.getElementById('injectBtn').click(); }
+      if(ev.key.toLowerCase() === 's'){ document.getElementById('enableSoundBtn').click(); }
+    });
+  </script>
+</body>
+</html>

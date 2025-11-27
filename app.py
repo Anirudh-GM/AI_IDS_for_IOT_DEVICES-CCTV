@@ -1,182 +1,178 @@
-from flask import Flask, render_template, Response, jsonify, request
-import cv2, threading, time, sqlite3
-from datetime import datetime
+﻿# app.py — replacement (overwrite the whole file with this)
+from flask import Flask, render_template, Response, request, jsonify
+import cv2
+import numpy as np
+import time
+import os
+from cctv_app import CameraStream
+from realtime_video_ids import IDSState
+from notify import notify_async
 
 app = Flask(__name__)
 
-# Globals
-camera = cv2.VideoCapture(0)
-running = False
-manual_attack = False
-inject_attack = False
-inject_until = 0
-intrusion_detected = False
-last_detected = None
-db_lock = threading.Lock()
+# Camera index (default 0). You can set environment variable CAMERA_INDEX to change it.
+CAM_IDX = int(os.getenv("CAMERA_INDEX", "0"))
+camera = CameraStream(src=CAM_IDX)
 
-# DB helper (optional logging)
-def log_intrusion(device, attack_type):
-    with db_lock:
-        conn = sqlite3.connect('intrusion_log.db')
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS intrusions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT,
-                device TEXT,
-                attack_type TEXT
-            )
-        ''')
-        cursor.execute("INSERT INTO intrusions (timestamp, device, attack_type) VALUES (?, ?, ?)",
-                       (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), device, attack_type))
-        conn.commit()
-        conn.close()
+# IDS state (12s sustained obstruction by default)
+ids = IDSState(obstruction_seconds=int(os.getenv("OBSTRUCTION_SECONDS", "12")),
+               motion_diff_threshold=int(os.getenv("MOTION_DIFF_THRESHOLD", "2500")),
+               brightness_low=int(os.getenv("BRIGHTNESS_LOW", "25")),
+               cooldown_seconds=int(os.getenv("COOLDOWN_SECONDS", "300")))
 
-# Inject helper
-def start_inject(duration=8):
-    global inject_attack, inject_until
-    inject_attack = True
-    inject_until = time.time() + duration
-    def _wait():
-        global inject_attack
-        while time.time() < inject_until:
-            time.sleep(0.1)
-        inject_attack = False
-    threading.Thread(target=_wait, daemon=True).start()
+# Runtime toggles and state
+runtime = {
+    "detection_enabled": True,
+    "inject_enabled": False,
+    "manual_attack": False,
+    "status": "Stopped",
+    "last_alert_time": None
+}
 
-# Frame generator with detection logic
-def generate_frames():
-    global intrusion_detected, last_detected, inject_attack
-    COVER_THRESHOLD = 40        # mean brightness below -> considered covered (tweakable)
-    while True:
-        success, frame = camera.read()
-        if not success:
-            time.sleep(0.1)
-            continue
+detection_log = []  # in-memory log
 
-        # make a copy for analysis
-        small = cv2.resize(frame, (320, 240))
-        gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
-        mean_brightness = int(gray.mean())
+# Alert contacts from env
+ALERT_EMAIL = os.getenv("ALERT_EMAIL")   # single email or comma-separated
+ALERT_PHONE = os.getenv("ALERT_PHONE")   # phone for SMS if configured
 
-        # determine detection conditions
-        now = time.time()
-        is_covered = mean_brightness < COVER_THRESHOLD
-        is_manual = manual_attack
-        is_inject = inject_attack and (now < inject_until)
-
-        # decide intrusion
-        if is_manual:
-            intrusion_type = "Manual Attack (A)"
-            intrusion = True
-            device = "Camera"
-        elif is_inject:
-            intrusion_type = "Injected Attack (I)"
-            intrusion = True
-            device = "Camera"
-        elif is_covered:
-            intrusion_type = "Camera Covered"
-            intrusion = True
-            device = "Camera"
-        else:
-            intrusion = False
-            intrusion_type = ""
-            device = ""
-
-        # Set global state & log only on new detection
-        if intrusion and (last_detected != intrusion_type):
-            intrusion_detected = True
-            last_detected = intrusion_type
-            try:
-                log_intrusion(device, intrusion_type)
-            except Exception:
-                pass
-        elif not intrusion:
-            intrusion_detected = False
-            last_detected = None
-
-        # Overlay status on frame
-        status = "DETECTING" if running else "STOPPED"
-        if intrusion:
-            text = f"ALERT: {intrusion_type}"
-            color = (0, 0, 255)
-        else:
-            text = f"Status: {status} | Brightness={mean_brightness}"
-            color = (0, 255, 0)
-
-        cv2.putText(frame, text, (10,30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-        cv2.putText(frame, f"Manual(A)={'ON' if manual_attack else 'OFF'} Inject(I)={'ON' if inject_attack else 'OFF'}", (10,60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,200), 1)
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
-# Routes
 @app.route('/')
 def index():
-    return render_template('dashboard.html')
+    return render_template('start_dashboard.html')
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/start_detection', methods=['POST'])
 def start_detection():
-    global running
-    running = True
-    return jsonify({'status':'started'})
+    runtime["detection_enabled"] = True
+    runtime["status"] = "Running"
+    return jsonify(success=True)
 
 @app.route('/stop_detection', methods=['POST'])
 def stop_detection():
-    global running, manual_attack, inject_attack
-    running = False
-    manual_attack = False
-    inject_attack = False
-    return jsonify({'status':'stopped'})
+    runtime["detection_enabled"] = False
+    runtime["status"] = "Stopped"
+    return jsonify(success=True)
 
 @app.route('/toggle_manual', methods=['POST'])
 def toggle_manual():
-    global manual_attack
-    manual_attack = not manual_attack
-    return jsonify({'manual': manual_attack})
+    runtime["manual_attack"] = not runtime["manual_attack"]
+    return jsonify(manual=runtime["manual_attack"])
 
-@app.route('/inject', methods=['POST'])
-def inject():
-    data = request.get_json(silent=True) or {}
-    duration = int(data.get('duration', 8))
-    start_inject(duration)
-    return jsonify({'injected': True, 'duration': duration})
+@app.route('/toggle_inject', methods=['POST'])
+def toggle_inject():
+    runtime["inject_enabled"] = not runtime["inject_enabled"]
+    return jsonify(inject=runtime["inject_enabled"])
 
-@app.route('/get_status')
-def get_status():
-    # Return detection state and last intrusion info
-    conn = sqlite3.connect('intrusion_log.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT timestamp, device, attack_type FROM intrusions ORDER BY id DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-    timestamp, device, attack_type = (row if row is not None else (None, None, None))
+@app.route('/status', methods=['GET'])
+def status():
     return jsonify({
-        'running': running,
-        'manual_attack': manual_attack,
-        'inject_attack': inject_attack and time.time() < inject_until,
-        'intrusion_detected': intrusion_detected,
-        'timestamp': timestamp,
-        'device': device,
-        'attack_type': attack_type
+        "detection_enabled": runtime["detection_enabled"],
+        "inject_enabled": runtime["inject_enabled"],
+        "manual_attack": runtime["manual_attack"],
+        "status": runtime["status"],
+        "last_alert_time": runtime["last_alert_time"],
+        "log": detection_log[-20:]
     })
 
-if __name__ == '__main__':
-    # ensure DB exists
-    with db_lock:
-        conn = sqlite3.connect('intrusion_log.db')
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS intrusions (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        timestamp TEXT, device TEXT, attack_type TEXT)''')
-        conn.commit()
-        conn.close()
+def _make_placeholder(msg="NO CAMERA"):
+    """Return JPEG bytes for a placeholder image."""
+    img = np.zeros((360, 640, 3), dtype=np.uint8)
+    cv2.putText(img, msg, (20, 180), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2, cv2.LINE_AA)
+    ret, buf = cv2.imencode('.jpg', img)
+    return buf.tobytes() if ret else b''
 
-    print('Starting app on http://127.0.0.1:5000')
-    app.run(debug=True)
+NO_CAM_BYTES = _make_placeholder()
+
+def gen_frames():
+    """Generator to yield MJPEG frames to the browser."""
+    last_frame_bytes = None
+    while True:
+        success, frame = camera.read()
+        if not success or frame is None:
+            # yield placeholder so the browser shows something
+            if last_frame_bytes:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + last_frame_bytes + b'\r\n')
+            else:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + NO_CAM_BYTES + b'\r\n')
+            time.sleep(0.1)
+            continue
+
+        # Simulate injection/freeze when inject_enabled is True
+        if runtime["inject_enabled"]:
+            annotated = frame.copy()
+            cv2.putText(annotated, "INJECT: FREEZE", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 165, 255), 2, cv2.LINE_AA)
+            ret, buffer = cv2.imencode('.jpg', annotated)
+            if ret:
+                last_frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + last_frame_bytes + b'\r\n')
+            time.sleep(0.05)
+            continue
+
+        # If detection disabled, annotate and stream without IDS checks
+        if not runtime["detection_enabled"]:
+            annotated = frame.copy()
+            cv2.putText(annotated, "Status: Detection OFF", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            ret, buffer = cv2.imencode('.jpg', annotated)
+            if ret:
+                last_frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + last_frame_bytes + b'\r\n')
+            time.sleep(0.05)
+            continue
+
+        # Run IDS processing
+        try:
+            annotated, is_alert, reason = ids.process_frame(frame)
+        except Exception as e:
+            print("IDS error:", e)
+            annotated = frame
+            is_alert = False
+            reason = None
+
+        # Manual attack forces an alert (testing)
+        if runtime["manual_attack"]:
+            is_alert = True
+            reason = "Manual attack toggled"
+
+        # Handle alert: log and notify (non-blocking)
+        if is_alert:
+            ts = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            runtime["last_alert_time"] = ts
+            runtime["status"] = "ALERT"
+            entry = {"time": ts, "reason": reason}
+            detection_log.append(entry)
+            if len(detection_log) > 500:
+                detection_log.pop(0)
+
+            # notifications (background thread)
+            subject = "[AI-IDS] Camera Obstruction Alert"
+            body = f"Alert: {reason}\nTime: {ts}\n"
+            # email_to can be comma-separated
+            email_to = ALERT_EMAIL
+            if email_to:
+                notify_async(subject, body, email_to=email_to, sms_to=ALERT_PHONE)
+        else:
+            runtime["status"] = "Running"
+
+        # encode and yield
+        try:
+            ret, buffer = cv2.imencode('.jpg', annotated)
+            if not ret:
+                time.sleep(0.05)
+                continue
+            last_frame_bytes = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + last_frame_bytes + b'\r\n')
+        except Exception as e:
+            print("Encode error:", e)
+            time.sleep(0.05)
+            continue
+
+if __name__ == '__main__':
+    # Ensure OpenCV warnings don't crash the app; run Flask
+    app.run(host='127.0.0.1', port=5000, debug=False, use_reloader=False)
