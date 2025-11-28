@@ -177,44 +177,17 @@ def control():
     if not action:
         return jsonify({"error": "No action provided"}), 400
     
-    # Detect suspicious control patterns
-    client_ip = request.remote_addr
-    current_time = datetime.now()
-    
-    # Check for rapid control requests (potential attack)
-    if not hasattr(control, 'last_control_time'):
-        control.last_control_time = {}
-    if not hasattr(control, 'control_count'):
-        control.control_count = {}
-    
-    key = f"{client_ip}:{action}"
-    if key in control.last_control_time:
-        time_diff = (current_time - control.last_control_time[key]).total_seconds()
-        if time_diff < 1.0:  # Less than 1 second between requests
-            logger.warning(f"Rapid control requests detected from {client_ip}: {action}")
-            log_event("SUSPICIOUS_ACTIVITY", f"Rapid control requests from {client_ip}")
-    
-    control.last_control_time[key] = current_time
-    control.control_count[key] = control.control_count.get(key, 0) + 1
-    
-    # Check for excessive control requests
-    if control.control_count[key] > 10:
-        logger.warning(f"Excessive control requests from {client_ip}: {control.control_count[key]} requests")
-        log_event("BRUTE_FORCE_ATTEMPT", f"Excessive control requests from {client_ip}")
-    
     if action == 'start':
         runtime["detection_enabled"] = True
         logger.info("Detection enabled via API")
     elif action == 'stop':
         runtime["detection_enabled"] = False
         logger.info("Detection disabled via API")
-        log_event("SYSTEM_TAMPERING", f"Detection disabled by {client_ip}")
     elif action == 'toggle_manual':
         if not runtime["manual_attack"]:
             # Start manual attack
             runtime["manual_attack"] = True
             logger.info("Manual attack started")
-            log_event("MANUAL_ATTACK_TRIGGER", f"Manual attack triggered by {client_ip}")
         else:
             # Stop manual attack - this will trigger session logging
             runtime["manual_attack"] = False
@@ -224,7 +197,6 @@ def control():
             # Start inject attack
             runtime["inject_enabled"] = True
             logger.info("Inject attack started")
-            log_event("INJECT_ATTACK_TRIGGER", f"Inject attack triggered by {client_ip}")
         else:
             # Stop inject attack - this will trigger session logging
             runtime["inject_enabled"] = False
@@ -237,115 +209,14 @@ def control():
 @app.route('/api/clear_logs', methods=['POST'])
 def clear_logs():
     global detection_log
-    
-    # Detect suspicious log clearing
-    client_ip = request.remote_addr
-    logger.warning(f"Log clearing attempt from {client_ip}")
-    log_event("SYSTEM_TAMPERING", f"Log clearing attempt by {client_ip}")
-    
     detection_log.clear()
     logger.info("Logs cleared via API")
     return jsonify({"success": True, "message": "Logs cleared"})
 
-@app.route('/api/login', methods=['POST'])
-def login():
-    """Login endpoint for brute force detection"""
-    data = request.get_json()
-    client_ip = request.remote_addr
-    
-    username = data.get('username', '')
-    password = data.get('password', '')
-    
-    # Track login attempts
-    if not hasattr(login, 'attempts'):
-        login.attempts = {}
-    
-    login.attempts[client_ip] = login.attempts.get(client_ip, 0) + 1
-    
-    # Detect brute force
-    if login.attempts[client_ip] > 5:
-        logger.warning(f"Brute force attack detected from {client_ip}: {login.attempts[client_ip]} attempts")
-        log_event("BRUTE_FORCE_ATTACK", f"Brute force login from {client_ip} ({login.attempts[client_ip]} attempts)")
-    
-    # Simulate login failure (in real system, check credentials)
-    logger.warning(f"Login attempt from {client_ip}: {username}/{password}")
-    
-    return jsonify({"success": False, "message": "Invalid credentials"}), 401
-
-@app.route('/api/config', methods=['GET', 'POST'])
-def config():
-    """Configuration endpoint for injection detection"""
-    client_ip = request.remote_addr
-    
-    if request.method == 'POST':
-        data = request.get_json()
-        logger.warning(f"Configuration injection attempt from {client_ip}: {data}")
-        log_event("CONFIG_INJECTION", f"Config injection attempt by {client_ip}: {list(data.keys())}")
-        
-        # Simulate rejecting malicious config changes
-        return jsonify({"success": False, "message": "Configuration rejected"}), 403
-    
-    # GET request - return limited safe config
-    return jsonify({"success": True, "config": {"safe_param": "safe_value"}})
-
-@app.route('/api/file', methods=['GET'])
-def file_access():
-    """File access endpoint for credential theft detection"""
-    client_ip = request.remote_addr
-    requested_path = request.args.get('path', '')
-    
-    # Detect suspicious file access
-    suspicious_paths = ['/etc/passwd', '/etc/shadow', '/config/', '/admin/', '/system/']
-    
-    for suspicious in suspicious_paths:
-        if suspicious in requested_path:
-            logger.warning(f"Credential theft attempt from {client_ip}: {requested_path}")
-            log_event("CREDENTIAL_THEFT", f"File access attempt by {client_ip}: {requested_path}")
-            return jsonify({"error": "Access denied"}), 403
-    
-    logger.info(f"File access from {client_ip}: {requested_path}")
-    return jsonify({"error": "File not found"}), 404
-
-@app.route('/api/exploit', methods=['POST'])
-def exploit():
-    """Exploit attempt detection"""
-    client_ip = request.remote_addr
-    data = request.get_json()
-    
-    logger.error(f"Exploit attempt from {client_ip}: {data}")
-    log_event("EXPLOIT_ATTEMPT", f"Exploit attempt by {client_ip}: {data.get('exploit', 'unknown')}")
-    
-    return jsonify({"error": "Access denied"}), 403
-
-@app.route('/api/version', methods=['GET'])
-def version():
-    """Version information disclosure detection"""
-    client_ip = request.remote_addr
-    
-    logger.info(f"Version information requested by {client_ip}")
-    log_event("RECONNAISSANCE", f"Version enumeration by {client_ip}")
-    
-    return jsonify({"version": "AI-IDS v1.0", "build": "secure"})
-
-@app.route('/api/system', methods=['GET'])
-def system_info():
-    """System information disclosure detection"""
-    client_ip = request.remote_addr
-    
-    logger.info(f"System information requested by {client_ip}")
-    log_event("RECONNAISSANCE", f"System enumeration by {client_ip}")
-    
-    return jsonify({"system": "Secure", "status": "Protected"})
-
 @app.route('/api/recordings', methods=['GET'])
 def list_recordings():
-    """List all recorded video files with filtering and sorting"""
+    """List all recorded video files"""
     try:
-        # Get query parameters
-        sort_by = request.args.get('sort', 'date')  # date, name, size
-        order = request.args.get('order', 'desc')    # asc, desc
-        date_filter = request.args.get('date', '')   # YYYY-MM-DD or empty for all
-        
         recordings = []
         recordings_dir = Config.RECORDINGS_DIR
         
@@ -354,49 +225,17 @@ def list_recordings():
             if filename.endswith('.mp4'):
                 filepath = os.path.join(recordings_dir, filename)
                 stat = os.stat(filepath)
-                created_time = datetime.fromtimestamp(stat.st_ctime)
-                created_date = created_time.strftime('%Y-%m-%d')
-                
-                recording = {
+                recordings.append({
                     'filename': filename,
                     'size': stat.st_size,
-                    'size_mb': round(stat.st_size / (1024 * 1024), 2),
-                    'created': created_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'created_date': created_date,
-                    'created_timestamp': int(stat.st_ctime),
-                    'download_url': f'/api/download/{filename}',
-                    'duration': '5:00'  # Fixed 5-minute duration
-                }
-                
-                # Apply date filter if specified
-                if not date_filter or created_date == date_filter:
-                    recordings.append(recording)
+                    'created': datetime.fromtimestamp(stat.st_ctime).strftime('%Y-%m-%d %H:%M:%S'),
+                    'download_url': f'/api/download/{filename}'
+                })
         
-        # Sort recordings
-        if sort_by == 'date':
-            recordings.sort(key=lambda x: x['created_timestamp'], reverse=(order == 'desc'))
-        elif sort_by == 'name':
-            recordings.sort(key=lambda x: x['filename'], reverse=(order == 'desc'))
-        elif sort_by == 'size':
-            recordings.sort(key=lambda x: x['size'], reverse=(order == 'desc'))
+        # Sort by creation time (newest first)
+        recordings.sort(key=lambda x: x['created'], reverse=True)
         
-        # Get available dates for filter dropdown
-        available_dates = sorted(set(r['created_date'] for r in recordings), reverse=True)
-        
-        # Calculate statistics
-        total_size = sum(r['size'] for r in recordings)
-        total_count = len(recordings)
-        
-        return jsonify({
-            "recordings": recordings,
-            "available_dates": available_dates,
-            "statistics": {
-                "total_count": total_count,
-                "total_size": total_size,
-                "total_size_mb": round(total_size / (1024 * 1024), 2),
-                "total_size_gb": round(total_size / (1024 * 1024 * 1024), 2)
-            }
-        })
+        return jsonify({"recordings": recordings})
     except Exception as e:
         logger.error(f"Error listing recordings: {e}")
         return jsonify({"error": str(e)}), 500
