@@ -1,13 +1,18 @@
 # app.py — Enhanced version with better error handling and features
-from flask import Flask, render_template, Response, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
 import cv2
 import numpy as np
 import time
-import os
-import json
-from datetime import datetime
-from threading import Lock
 import logging
+import os
+import threading
+from datetime import datetime
+from werkzeug.utils import secure_filename
+import json
+import hashlib
+import re
+from threading import Lock
+from functools import wraps
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -15,6 +20,13 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Secret key for session management
+app.secret_key = os.getenv('SECRET_KEY', 'ai-ids-secret-key-change-in-production')
+
+# Session configuration
+from datetime import timedelta
+app.permanent_session_lifetime = timedelta(hours=24)  # Session expires after 24 hours
 
 # Configuration
 class Config:
@@ -41,6 +53,57 @@ class Config:
 # Ensure directories exist
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.RECORDINGS_DIR, exist_ok=True)
+
+# User database (in production, use a proper database)
+USERS = {
+    'admin': {
+        'password': 'admin123',  # In production, use hashed passwords
+        'email': 'admin@ai-ids.local',
+        'role': 'Administrator',
+        'member_since': '2024-01-01'
+    },
+    'security': {
+        'password': 'security123',
+        'email': 'security@ai-ids.local',
+        'role': 'Security Officer',
+        'member_since': '2024-01-15'
+    }
+}
+
+# Generate and store admin codes
+ADMIN_CODES = {}
+def generate_admin_code():
+    """Generate a unique 4-digit admin code"""
+    import random
+    while True:
+        code = f"{random.randint(1000, 9999)}"
+        if code not in ADMIN_CODES:
+            ADMIN_CODES[code] = time.time()  # Store timestamp
+            return code
+
+# Initialize with one admin code
+INITIAL_ADMIN_CODE = "1234"  # Default code for first setup
+ADMIN_CODES[INITIAL_ADMIN_CODE] = time.time()
+
+# Authentication decorator
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def authenticate_user(username, password):
+    """Authenticate user credentials"""
+    user = USERS.get(username)
+    if user and user['password'] == password:
+        return user
+    return None
+
+def get_user_by_username(username):
+    """Get user information by username"""
+    return USERS.get(username)
 
 # Global variables
 camera = None
@@ -128,6 +191,18 @@ def start_new_recording():
     logger.info(f"Started new recording: {filename}")
     return filepath
 
+def stop_recording():
+    """Stop current video recording"""
+    global video_writer, video_start_time
+    
+    if video_writer is not None:
+        video_writer.release()
+        video_writer = None
+        video_start_time = None
+        logger.info("Video recording stopped")
+        return True
+    return False
+
 def write_frame_to_video(frame):
     """Write frame to current video file with alert overlay"""
     global video_writer, video_start_time
@@ -147,7 +222,358 @@ def write_frame_to_video(frame):
 # Routes
 @app.route('/')
 def index():
+    # Always redirect to login as default entry point
+    return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
     return render_template('start_dashboard.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # If user is already logged in, redirect to dashboard
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username', '')
+        password = data.get('password', '')
+        remember_me = data.get('remember_me', False)
+        
+        # Authenticate user
+        user = authenticate_user(username, password)
+        if user:
+            # Set session
+            session['user_id'] = username
+            session['username'] = username
+            session['email'] = user['email']
+            session['role'] = user['role']
+            session.permanent = remember_me
+            
+            logger.info(f"User logged in: {username}")
+            log_event("LOGIN", f"User {username} logged in")
+            
+            return jsonify({
+                "success": True,
+                "message": "Login successful",
+                "user": {
+                    "username": username,
+                    "email": user['email'],
+                    "role": user['role']
+                },
+                "camera_initialized": runtime["camera_connected"]
+            })
+        else:
+            logger.warning(f"Login failed for: {username}")
+            log_event("LOGIN_FAILED", f"Failed login attempt for {username}")
+            
+            return jsonify({
+                "success": False,
+                "message": "Invalid username or password"
+            }), 401
+    
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    # Clear session
+    session.clear()
+    logger.info("User logged out")
+    log_event("LOGOUT", "User logged out")
+    return redirect(url_for('login'))
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+@app.route('/create-user')
+@login_required
+def create_user():
+    return render_template('create_user.html')
+
+@app.route('/api/verify-admin-code', methods=['POST'])
+def verify_admin_code():
+    """Verify admin code for user creation"""
+    data = request.get_json()
+    code = data.get('code', '')
+    
+    if code in ADMIN_CODES:
+        return jsonify({
+            "success": True,
+            "message": "Admin code verified successfully"
+        })
+    else:
+        logger.warning(f"Invalid admin code attempted: {code}")
+        log_event("UNAUTHORIZED_ACCESS", f"Invalid admin code: {code}")
+        return jsonify({
+            "success": False,
+            "message": "Invalid admin code"
+        }), 403
+
+@app.route('/api/create-user', methods=['POST'])
+def api_create_user():
+    """Create new user with admin code verification"""
+    data = request.get_json()
+    
+    username = data.get('username', '').strip().lower()
+    password = data.get('password', '')
+    email = data.get('email', '').strip()
+    admin_code = data.get('admin_code', '')
+    
+    client_ip = request.remote_addr
+    
+    # Verify admin code
+    if admin_code not in ADMIN_CODES:
+        logger.warning(f"User creation attempt with invalid admin code from {client_ip}")
+        log_event("UNAUTHORIZED_USER_CREATION", f"Invalid admin code from {client_ip}")
+        return jsonify({
+            "success": False,
+            "message": "Invalid admin code"
+        }), 403
+    
+    # Validate input
+    if not username or not password or not email:
+        return jsonify({
+            "success": False,
+            "message": "All fields are required"
+        }), 400
+    
+    if len(username) < 3:
+        return jsonify({
+            "success": False,
+            "message": "Username must be at least 3 characters"
+        }), 400
+    
+    if len(password) < 6:
+        return jsonify({
+            "success": False,
+            "message": "Password must be at least 6 characters"
+        }), 400
+    
+    # Check if user already exists
+    if username in USERS:
+        return jsonify({
+            "success": False,
+            "message": "Username already exists"
+        }), 400
+    
+    # Create new user - all users are administrators
+    USERS[username] = {
+        'password': password,  # In production, use hashed passwords
+        'email': email,
+        'role': 'Administrator',  # All users are administrators
+        'member_since': datetime.now().strftime('%Y-%m-%d')
+    }
+    
+    # Remove used admin code
+    del ADMIN_CODES[admin_code]
+    
+    logger.info(f"New administrator created: {username} from {client_ip}")
+    log_event("ADMIN_CREATED", f"Administrator {username} created from {client_ip}")
+    
+    return jsonify({
+        "success": True,
+        "message": "Administrator created successfully"
+    })
+
+@app.route('/api/update-profile', methods=['POST'])
+@login_required
+def api_update_profile():
+    """Update user profile information"""
+    data = request.get_json()
+    
+    username = session.get('username')
+    new_email = data.get('email', '').strip()
+    
+    if not new_email:
+        return jsonify({
+            "success": False,
+            "message": "Email is required"
+        }), 400
+    
+    if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', new_email):
+        return jsonify({
+            "success": False,
+            "message": "Please enter a valid email address"
+        }), 400
+    
+    # Update user email
+    if username in USERS:
+        USERS[username]['email'] = new_email
+        session['email'] = new_email
+        
+        logger.info(f"Profile updated for user: {username}")
+        log_event("PROFILE_UPDATED", f"User {username} updated profile")
+        
+        return jsonify({
+            "success": True,
+            "message": "Profile updated successfully",
+            "email": new_email
+        })
+    
+    return jsonify({
+        "success": False,
+        "message": "User not found"
+    }), 404
+
+@app.route('/api/change-password', methods=['POST'])
+@login_required
+def api_change_password():
+    """Change user password"""
+    data = request.get_json()
+    
+    username = session.get('username')
+    current_password = data.get('current_password', '')
+    new_password = data.get('new_password', '')
+    confirm_password = data.get('confirm_password', '')
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({
+            "success": False,
+            "message": "All fields are required"
+        }), 400
+    
+    # Verify current password
+    if username in USERS and USERS[username]['password'] != current_password:
+        return jsonify({
+            "success": False,
+            "message": "Current password is incorrect"
+        }), 400
+    
+    if new_password != confirm_password:
+        return jsonify({
+            "success": False,
+            "message": "New passwords do not match"
+        }), 400
+    
+    if len(new_password) < 6:
+        return jsonify({
+            "success": False,
+            "message": "Password must be at least 6 characters long"
+        }), 400
+    
+    # Update password
+    USERS[username]['password'] = new_password
+    
+    logger.info(f"Password changed for user: {username}")
+    log_event("PASSWORD_CHANGED", f"User {username} changed password")
+    
+    return jsonify({
+        "success": True,
+        "message": "Password changed successfully"
+    })
+
+@app.route('/api/get-user-profile', methods=['GET'])
+def api_get_user_profile():
+    """Get current user profile information"""
+    username = session.get('username')
+    
+    if not username:
+        return jsonify({
+            "success": False,
+            "message": "Not logged in"
+        }), 401
+    
+    if username in USERS:
+        user_data = USERS[username].copy()
+        # Remove password from response
+        user_data.pop('password', None)
+        
+        return jsonify({
+            "success": True,
+            "user": user_data
+        })
+    else:
+        return jsonify({
+            "success": False,
+            "message": "User not found"
+        }), 404
+
+@app.route('/api/camera/start', methods=['POST'])
+@login_required
+def api_camera_start():
+    """Start camera and recording"""
+    try:
+        if init_camera():
+            logger.info(f"Camera started by user: {session.get('username')}")
+            start_new_recording()
+            log_event("CAMERA_STARTED", f"Camera started by {session.get('username')}")
+            
+            return jsonify({
+                "success": True,
+                "message": "Camera started successfully",
+                "camera_connected": True
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Failed to start camera"
+            }), 500
+    except Exception as e:
+        logger.error(f"Error starting camera: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Error starting camera: {str(e)}"
+        }), 500
+
+@app.route('/api/camera/stop', methods=['POST'])
+@login_required
+def api_camera_stop():
+    """Stop camera and recording"""
+    try:
+        username = session.get('username')
+        logger.info(f"Camera stopped by user: {username}")
+        log_event("CAMERA_STOPPED", f"Camera stopped by {username}")
+        
+        # Stop recording and release camera
+        stop_recording()
+        release_camera()
+        
+        return jsonify({
+            "success": True,
+            "message": "Camera stopped successfully",
+            "camera_connected": False
+        })
+    except Exception as e:
+        logger.error(f"Error stopping camera: {e}")
+        return jsonify({
+            "success": False,
+            "message": f"Error stopping camera: {str(e)}"
+        }), 500
+
+@app.route('/api/camera/status', methods=['GET'])
+@login_required
+def api_camera_status():
+    """Get camera status"""
+    return jsonify({
+        "success": True,
+        "camera_connected": runtime["camera_connected"],
+        "recording": recording_enabled and video_writer is not None
+    })
+
+@app.route('/api/generate-admin-code', methods=['POST'])
+@login_required
+def api_generate_admin_code():
+    """Generate new admin code (for administrators only)"""
+    if session.get('role') != 'Administrator':
+        return jsonify({
+            "success": False,
+            "message": "Unauthorized access"
+        }), 403
+    
+    new_code = generate_admin_code()
+    
+    logger.info(f"New admin code generated by {session.get('username')}")
+    log_event("ADMIN_CODE_GENERATED", f"Admin code generated by {session.get('username')}")
+    
+    return jsonify({
+        "success": True,
+        "code": new_code,
+        "message": "New admin code generated"
+    })
 
 @app.route('/video_feed')
 def video_feed():
@@ -246,31 +672,6 @@ def clear_logs():
     detection_log.clear()
     logger.info("Logs cleared via API")
     return jsonify({"success": True, "message": "Logs cleared"})
-
-@app.route('/api/login', methods=['POST'])
-def login():
-    """Login endpoint for brute force detection"""
-    data = request.get_json()
-    client_ip = request.remote_addr
-    
-    username = data.get('username', '')
-    password = data.get('password', '')
-    
-    # Track login attempts
-    if not hasattr(login, 'attempts'):
-        login.attempts = {}
-    
-    login.attempts[client_ip] = login.attempts.get(client_ip, 0) + 1
-    
-    # Detect brute force
-    if login.attempts[client_ip] > 5:
-        logger.warning(f"Brute force attack detected from {client_ip}: {login.attempts[client_ip]} attempts")
-        log_event("BRUTE_FORCE_ATTACK", f"Brute force login from {client_ip} ({login.attempts[client_ip]} attempts)")
-    
-    # Simulate login failure (in real system, check credentials)
-    logger.warning(f"Login attempt from {client_ip}: {username}/{password}")
-    
-    return jsonify({"success": False, "message": "Invalid credentials"}), 401
 
 @app.route('/api/config', methods=['GET', 'POST'])
 def config():
@@ -831,13 +1232,14 @@ def cleanup():
     logger.info("Application shutting down")
 
 if __name__ == '__main__':
-    # Initialize camera
-    init_camera()
+    # Initialize AI-IDS system (camera will be started after login)
+    logger.info("Initializing AI-IDS system...")
+    logger.info("Camera will be initialized after user login")
     
-    # Start the Flask app
+    # Start the Flask application
     try:
-        app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
-    except Exception as e:
-        logger.error(f"Failed to start Flask: {str(e)}")
+        app.run(host='0.0.0.0', port=5000, debug=False)
+    except KeyboardInterrupt:
+        logger.info("Shutting down AI-IDS system...")
     finally:
         release_camera()

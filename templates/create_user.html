@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create User - AI-IDS</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .create-user-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(10px);
+        }
+
+        .create-user-header {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .create-user-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .create-user-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .create-user-body {
+            padding: 40px 30px;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .step.completed {
+            background: #27ae60;
+            color: white;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #999;
+        }
+
+        .admin-code-input {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .code-digit {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .code-digit:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .code-digit.filled {
+            border-color: #27ae60;
+            background: #f0f9f4;
+        }
+
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            border-radius: 2px;
+            background: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak { background: #e74c3c; width: 33%; }
+        .strength-medium { background: #f39c12; width: 66%; }
+        .strength-strong { background: #27ae60; width: 100%; }
+
+        .btn {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn.loading {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            cursor: not-allowed;
+        }
+
+        .btn.loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            border-left: 4px solid #c33;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            border-left: 4px solid #3c3;
+        }
+
+        .info-message {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .button-group .btn {
+            flex: 1;
+        }
+
+        .back-to-login {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-to-login a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .back-to-login a:hover {
+            color: #3498db;
+        }
+
+        .requirements {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .requirements ul {
+            margin-left: 20px;
+            margin-top: 5px;
+        }
+
+        .requirements li {
+            margin-bottom: 3px;
+        }
+
+        @media (max-width: 480px) {
+            .create-user-container {
+                margin: 20px;
+                max-width: none;
+            }
+
+            .create-user-body {
+                padding: 30px 20px;
+            }
+
+            .admin-code-input {
+                gap: 5px;
+            }
+
+            .code-digit {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="create-user-container">
+        <div class="create-user-header">
+            <h1>
+                <i class="fas fa-user-shield"></i>
+                Create Administrator
+            </h1>
+            <p>AI-IDS Administrator Registration with Admin Code Verification</p>
+        </div>
+
+        <div class="create-user-body">
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+            </div>
+
+            <div class="message error-message" id="errorMessage"></div>
+            <div class="message success-message" id="successMessage"></div>
+            <div class="message info-message" id="infoMessage"></div>
+
+            <!-- Step 1: Admin Code Verification -->
+            <div class="form-section active" id="step1Section">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">Step 1: Admin Code Verification</h3>
+                <p style="margin-bottom: 20px; color: #666;">Enter the 4-digit admin code to proceed with user creation.</p>
+                
+                <div class="admin-code-input">
+                    <input type="text" class="code-digit" maxlength="1" id="code1">
+                    <input type="text" class="code-digit" maxlength="1" id="code2">
+                    <input type="text" class="code-digit" maxlength="1" id="code3">
+                    <input type="text" class="code-digit" maxlength="1" id="code4">
+                </div>
+
+                <button class="btn btn-primary" id="verifyCodeBtn">
+                    <i class="fas fa-shield-alt"></i>
+                    Verify Admin Code
+                </button>
+            </div>
+
+            <!-- Step 2: User Information -->
+            <div class="form-section" id="step2Section">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">Step 2: Administrator Information</h3>
+                
+                <div class="form-group">
+                    <label for="username">Username *</label>
+                    <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                    <small style="color: #666;">Minimum 3 characters, lowercase letters and numbers only</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" placeholder="user@example.com" required>
+                </div>
+
+                <div class="info-message" style="margin-bottom: 20px;">
+                    <i class="fas fa-info-circle"></i>
+                    All users are created as administrators with full system access.
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="backToStep1">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <button class="btn btn-primary" id="proceedToStep3">
+                        <i class="fas fa-arrow-right"></i>
+                        Next
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Password Setup -->
+            <div class="form-section" id="step3Section">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">Step 3: Set Password</h3>
+                
+                <div class="form-group">
+                    <label for="password">Password *</label>
+                    <input type="password" id="password" name="password" placeholder="Create a strong password" required>
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="passwordStrength"></div>
+                    </div>
+                    <div class="requirements">
+                        <strong>Password Requirements:</strong>
+                        <ul>
+                            <li>At least 6 characters long</li>
+                            <li>Contains uppercase and lowercase letters</li>
+                            <li>Contains at least one number</li>
+                            <li>Contains at least one special character</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="backToStep2">
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+                    </button>
+                    <button class="btn btn-success" id="createUserBtn">
+                        <i class="fas fa-user-plus"></i>
+                        Create User
+                    </button>
+                </div>
+            </div>
+
+            <div class="back-to-login">
+                <a href="/login">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let verifiedAdminCode = '';
+
+        // Step navigation
+        function showStep(step) {
+            // Hide all sections
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((stepEl, index) => {
+                stepEl.classList.remove('active', 'completed');
+                if (index + 1 < step) {
+                    stepEl.classList.add('completed');
+                } else if (index + 1 === step) {
+                    stepEl.classList.add('active');
+                }
+            });
+            
+            // Show current section
+            document.getElementById(`step${step}Section`).classList.add('active');
+            currentStep = step;
+        }
+
+        // Admin code input handling
+        document.querySelectorAll('.code-digit').forEach((input, index) => {
+            input.addEventListener('input', function(e) {
+                if (e.target.value.length === 1) {
+                    e.target.classList.add('filled');
+                    if (index < 3) {
+                        document.getElementById(`code${index + 2}`).focus();
+                    }
+                } else {
+                    e.target.classList.remove('filled');
+                }
+            });
+
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+                    document.getElementById(`code${index}`).focus();
+                }
+            });
+        });
+
+        // Verify admin code
+        document.getElementById('verifyCodeBtn').addEventListener('click', async function() {
+            const code = Array.from(document.querySelectorAll('.code-digit'))
+                .map(input => input.value)
+                .join('');
+            
+            if (code.length !== 4) {
+                showMessage('Please enter all 4 digits of the admin code.', 'error');
+                return;
+            }
+
+            this.classList.add('loading');
+            this.innerHTML = '<i class="fas fa-spinner"></i> Verifying...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch('/api/verify-admin-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    verifiedAdminCode = code;
+                    showMessage('Admin code verified successfully!', 'success');
+                    setTimeout(() => showStep(2), 1000);
+                } else {
+                    showMessage(data.message || 'Invalid admin code', 'error');
+                    // Clear the code inputs
+                    document.querySelectorAll('.code-digit').forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                    });
+                    document.getElementById('code1').focus();
+                }
+            } catch (error) {
+                console.error('Error verifying admin code:', error);
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                this.classList.remove('loading');
+                this.innerHTML = '<i class="fas fa-shield-alt"></i> Verify Admin Code';
+                this.disabled = false;
+            }
+        });
+
+        // Step 2 validation
+        document.getElementById('proceedToStep3').addEventListener('click', function() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!username || !email) {
+                showMessage('Please fill in all required fields.', 'error');
+                return;
+            }
+
+            if (username.length < 3) {
+                showMessage('Username must be at least 3 characters long.', 'error');
+                return;
+            }
+
+            if (!/^[a-z0-9]+$/.test(username)) {
+                showMessage('Username can only contain lowercase letters and numbers.', 'error');
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            showStep(3);
+        });
+
+        // Password strength checker
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('passwordStrength');
+            
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 10) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^a-zA-Z\d]/.test(password)) strength++;
+
+            strengthBar.className = 'password-strength-bar';
+            if (strength <= 2) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 3) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        });
+
+        // Create user
+        document.getElementById('createUserBtn').addEventListener('click', async function() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long.', 'error');
+                return;
+            }
+
+            this.classList.add('loading');
+            this.innerHTML = '<i class="fas fa-spinner"></i> Creating Administrator...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch('/api/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        password: password,
+                        admin_code: verifiedAdminCode
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('Administrator created successfully! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    showMessage(data.message || 'Failed to create administrator', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                this.classList.remove('loading');
+                this.innerHTML = '<i class="fas fa-user-plus"></i> Create Administrator';
+                this.disabled = false;
+            }
+        });
+
+        // Back buttons
+        document.getElementById('backToStep1').addEventListener('click', function() {
+            showStep(1);
+        });
+
+        document.getElementById('backToStep2').addEventListener('click', function() {
+            showStep(2);
+        });
+
+        // Message display
+        function showMessage(message, type) {
+            const messageEl = document.getElementById(`${type}Message`);
+            messageEl.textContent = message;
+            messageEl.style.display = 'block';
+            
+            // Hide other messages
+            document.querySelectorAll('.message').forEach(el => {
+                if (el !== messageEl) {
+                    el.style.display = 'none';
+                }
+            });
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize
+        document.getElementById('code1').focus();
+    </script>
+</body>
+</html>

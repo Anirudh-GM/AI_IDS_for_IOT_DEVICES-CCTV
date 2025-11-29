@@ -21,26 +21,102 @@
 
         /* Header */
         .header {
-            background: rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 40, 0.9));
             color: white;
             padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border-bottom: 2px solid #007bff;
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 28px;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header h1 i {
+            color: #007bff;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #a0a0a0;
+            font-weight: 400;
+            margin-left: 44px;
         }
 
         .header .status-bar {
             display: flex;
             gap: 20px;
             align-items: center;
+        }
+
+        .header .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header .auth-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header .auth-link:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .header .auth-error {
+            color: #dc3545;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
         }
 
         .status-item {
@@ -60,6 +136,35 @@
         .status-online { background-color: #28a745; }
         .status-offline { background-color: #dc3545; }
         .status-warning { background-color: #ffc107; }
+        
+        .camera-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+        
+        .camera-status.online {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        
+        .camera-status.offline {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        
+        .camera-status .status-indicator.online {
+            background-color: #28a745;
+        }
+        
+        .camera-status .status-indicator.offline {
+            background-color: #dc3545;
+        }
 
         @keyframes pulse {
             0% { opacity: 1; }
@@ -865,11 +970,14 @@
 </head>
 <body>
     <header class="header">
-        <h1><i class="fas fa-shield-alt"></i> AI-IDS</h1>
+        <div class="header-left">
+            <h1><i class="fas fa-shield-alt"></i> AI Intrusion Detection System</h1>
+            <div class="subtitle">Advanced CCTV Security Monitoring</div>
+        </div>
         <div class="status-bar">
             <div class="status-item">
                 <span class="status-indicator status-online" id="camera-status"></span>
-                <span id="camera-status-text">Camera Online</span>
+                <span id="camera-status-text">System Online</span>
             </div>
             <div class="status-item">
                 <i class="fas fa-clock"></i>
@@ -879,6 +987,9 @@
                 <i class="fas fa-bell"></i>
                 <span id="alert-count">0 Alerts</span>
             </div>
+        </div>
+        <div class="auth-section" id="authSection">
+            <!-- Auth links will be dynamically inserted here -->
         </div>
     </header>
 
@@ -925,7 +1036,13 @@
                             <i class="fas fa-bug"></i> Inject Attack
                         </button>
                         <button class="btn btn-success" onclick="toggleSound()">
-                            <i class="fas fa-volume-up"></i> Sound: OFF
+                            <i class="fas fa-volume-up"></i> Sound: ON
+                        </button>
+                        <button class="btn btn-primary" onclick="startCamera()" id="startCameraBtn">
+                            <i class="fas fa-video"></i> Start Camera
+                        </button>
+                        <button class="btn btn-danger" onclick="stopCamera()" id="stopCameraBtn" style="display: none;">
+                            <i class="fas fa-video-slash"></i> Stop Camera
                         </button>
                         <button class="btn btn-secondary" onclick="clearLogs()">
                             <i class="fas fa-trash"></i> Clear Logs
@@ -938,6 +1055,9 @@
                         <div class="video-header">
                             <span class="video-title">Camera 1 - Main Entrance</span>
                             <span class="video-status" id="cam1-status">LIVE</span>
+                            <div class="camera-status offline" id="cameraStatus">
+                                <span class="status-indicator offline"></span> Camera Disconnected
+                            </div>
                         </div>
                         <img id="video-feed" class="video-feed" src="/video_feed" alt="Camera Feed">
                     </div>
@@ -1159,11 +1279,6 @@
                 <h3><i class="fas fa-cog"></i> AI-IDS Settings</h3>
                     
                     <div class="setting-group">
-                        <label class="setting-label">Alert Email</label>
-                        <input type="email" class="setting-input" id="alert-email" placeholder="admin@example.com">
-                    </div>
-                    
-                    <div class="setting-group">
                         <label class="setting-label">Motion Sensitivity</label>
                         <input type="range" class="setting-input" min="1" max="10" value="5">
                     </div>
@@ -1171,7 +1286,7 @@
                     <div class="setting-group">
                         <div class="setting-toggle">
                             <label class="setting-label">Enable Sound Alerts</label>
-                            <div class="toggle-switch" id="sound-toggle"></div>
+                            <div class="toggle-switch active" id="sound-toggle"></div>
                         </div>
                     </div>
                     
@@ -1196,7 +1311,7 @@
     </div>
 
     <script>
-        let soundEnabled = false;
+        let soundEnabled = true; // Default sound to ON
         let statusInterval;
         let startTime = Date.now();
         let eventStats = {
@@ -1204,6 +1319,126 @@
             obstruction: 0,
             alerts: 0
         };
+
+        // Authentication functions
+        async function updateAuthSection() {
+            const authSection = document.getElementById('authSection');
+            
+            if (!authSection) {
+                console.warn('Auth section element not found');
+                return;
+            }
+            
+            try {
+                // Get user data from backend
+                const response = await fetch('/api/get-user-profile');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('User profile data:', data); // Debug log
+                
+                if (data.success && data.user) {
+                    const username = data.user.username || 'User';
+                    const userInitial = username ? username.charAt(0).toUpperCase() : 'U';
+                    
+                    // Update sessionStorage for consistency
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('username', username);
+                    sessionStorage.setItem('email', data.user?.email || '');
+                    sessionStorage.setItem('role', data.user?.role || 'User');
+                    
+                    authSection.innerHTML = `
+                        <div class="user-info">
+                            <div class="user-avatar">${userInitial}</div>
+                            <span>${username}</span>
+                            <a href="/profile" class="auth-link">
+                            <i class="fas fa-user"></i>
+                            Profile
+                        </a>
+                        <a href="#" class="auth-link" onclick="logout(event)">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </div>
+                `;
+            } else {
+                // This shouldn't happen since dashboard is protected, but handle gracefully
+                authSection.innerHTML = `
+                    <div class="auth-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Authentication Error
+                    </div>
+                `;
+            }
+            } catch (error) {
+                console.error('Error fetching user profile:', error);
+                
+                // Fallback to sessionStorage if API fails
+                const username = sessionStorage.getItem('username') || localStorage.getItem('username') || 'User';
+                const userInitial = username ? username.charAt(0).toUpperCase() : 'U';
+                
+                if (username !== 'User') {
+                    // User has some session data, show it
+                    authSection.innerHTML = `
+                        <div class="user-info">
+                            <div class="user-avatar">${userInitial}</div>
+                            <span>${username}</span>
+                            <a href="/profile" class="auth-link">
+                            <i class="fas fa-user"></i>
+                            Profile
+                        </a>
+                        <a href="#" class="auth-link" onclick="logout(event)">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Logout
+                        </a>
+                    </div>
+                `;
+                } else {
+                    // No user data found, show error
+                    authSection.innerHTML = `
+                        <div class="auth-error">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Session Error
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function logout(event) {
+            event.preventDefault();
+            if (confirm('Are you sure you want to logout?')) {
+                // Clear frontend storage
+                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('username');
+                sessionStorage.removeItem('email');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('username');
+                localStorage.removeItem('email');
+                
+                // Call backend logout
+                fetch('/logout', {
+                    method: 'GET'
+                }).then(() => {
+                    window.location.href = '/login';
+                }).catch(() => {
+                    // Even if backend call fails, redirect to login
+                    window.location.href = '/login';
+                });
+            }
+        }
+
+        // Initialize auth section on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // User is authenticated (backend already verified)
+            updateAuthSection();
+            
+            // Check camera status and update UI
+            checkCameraStatus();
+        });
 
         // Load recordings
         async function loadRecordings() {
@@ -1352,18 +1587,40 @@
             const savedSettings = localStorage.getItem('cctv-settings');
             if (savedSettings) {
                 const settings = JSON.parse(savedSettings);
-                document.getElementById('alert-email').value = settings.email || '';
-                if (settings.soundEnabled) {
-                    document.getElementById('sound-toggle').classList.add('active');
+                if (settings.soundEnabled !== undefined) {
+                    if (settings.soundEnabled) {
+                        document.getElementById('sound-toggle').classList.add('active');
+                        soundEnabled = true;
+                    } else {
+                        document.getElementById('sound-toggle').classList.remove('active');
+                        soundEnabled = false;
+                    }
                 }
                 if (settings.emailEnabled) {
                     document.getElementById('email-toggle').classList.add('active');
                 }
+            } else {
+                // Default settings - sound is ON
+                document.getElementById('sound-toggle').classList.add('active');
+                soundEnabled = true;
             }
             
             // Sound toggle
             document.getElementById('sound-toggle').addEventListener('click', function() {
                 this.classList.toggle('active');
+                soundEnabled = this.classList.contains('active');
+                
+                // Update the sound button in control panel
+                const soundBtn = document.querySelector('button[onclick="toggleSound()"]');
+                if (soundBtn) {
+                    soundBtn.innerHTML = soundEnabled ? 
+                        '<i class="fas fa-volume-up"></i> Sound: ON' : 
+                        '<i class="fas fa-volume-up"></i> Sound: OFF';
+                    soundBtn.className = soundEnabled ? 'btn btn-success' : 'btn btn-secondary';
+                }
+                
+                // Save settings
+                saveSettings();
             });
             
             // Email toggle
@@ -1446,6 +1703,17 @@
                 '<i class="fas fa-volume-up"></i> Sound: ON' : 
                 '<i class="fas fa-volume-up"></i> Sound: OFF';
             btn.className = soundEnabled ? 'btn btn-success' : 'btn btn-secondary';
+            
+            // Sync with settings toggle
+            const soundToggle = document.getElementById('sound-toggle');
+            if (soundEnabled) {
+                soundToggle.classList.add('active');
+            } else {
+                soundToggle.classList.remove('active');
+            }
+            
+            // Save settings
+            saveSettings();
         }
 
         function clearLogs() {
@@ -1457,6 +1725,132 @@
                         updateAnalytics([]); // Pass empty array to reset analytics
                     });
             }
+        }
+
+        // Camera control functions
+        async function startCamera() {
+            try {
+                const response = await fetch('/api/camera/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI
+                    document.getElementById('startCameraBtn').style.display = 'none';
+                    document.getElementById('stopCameraBtn').style.display = 'inline-block';
+                    
+                    // Refresh video feed
+                    const videoFeed = document.getElementById('videoFeed');
+                    if (videoFeed) {
+                        videoFeed.src = videoFeed.src.split('?')[0] + '?t=' + new Date().getTime();
+                    }
+                    
+                    // Update status
+                    updateCameraStatus(true);
+                    
+                    // Show success message
+                    showNotification('Camera started successfully', 'success');
+                } else {
+                    showNotification('Failed to start camera: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                showNotification('Error starting camera', 'error');
+            }
+        }
+
+        async function stopCamera() {
+            try {
+                const response = await fetch('/api/camera/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI
+                    document.getElementById('startCameraBtn').style.display = 'inline-block';
+                    document.getElementById('stopCameraBtn').style.display = 'none';
+                    
+                    // Update status
+                    updateCameraStatus(false);
+                    
+                    // Show success message
+                    showNotification('Camera stopped successfully', 'success');
+                } else {
+                    showNotification('Failed to stop camera: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error stopping camera:', error);
+                showNotification('Error stopping camera', 'error');
+            }
+        }
+
+        async function checkCameraStatus() {
+            try {
+                const response = await fetch('/api/camera/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateCameraStatus(data.camera_connected);
+                    
+                    // Update button visibility
+                    if (data.camera_connected) {
+                        document.getElementById('startCameraBtn').style.display = 'none';
+                        document.getElementById('stopCameraBtn').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('startCameraBtn').style.display = 'inline-block';
+                        document.getElementById('stopCameraBtn').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking camera status:', error);
+            }
+        }
+
+        function updateCameraStatus(isConnected) {
+            const statusElement = document.getElementById('cameraStatus');
+            if (statusElement) {
+                if (isConnected) {
+                    statusElement.innerHTML = '<span class="status-indicator online"></span> Camera Connected';
+                    statusElement.className = 'camera-status online';
+                } else {
+                    statusElement.innerHTML = '<span class="status-indicator offline"></span> Camera Disconnected';
+                    statusElement.className = 'camera-status offline';
+                }
+            }
+        }
+
+        function showNotification(message, type) {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px 20px;
+                border-radius: 5px;
+                color: white;
+                font-weight: bold;
+                z-index: 10000;
+                ${type === 'success' ? 'background-color: #28a745;' : 'background-color: #dc3545;'}
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
         }
 
         function exportLogs() {
@@ -2289,13 +2683,11 @@
 
         // Settings functions
         function saveSettings() {
-            const email = document.getElementById('alert-email').value;
             const soundEnabled = document.getElementById('sound-toggle').classList.contains('active');
             const emailEnabled = document.getElementById('email-toggle').classList.contains('active');
             
             // Save to localStorage (in a real app, this would be saved to backend)
             localStorage.setItem('cctv-settings', JSON.stringify({
-                email: email,
                 soundEnabled: soundEnabled,
                 emailEnabled: emailEnabled
             }));
@@ -2306,7 +2698,6 @@
 
         function resetSettings() {
             if (confirm('Are you sure you want to reset all settings to default?')) {
-                document.getElementById('alert-email').value = '';
                 document.getElementById('sound-toggle').classList.remove('active');
                 document.getElementById('email-toggle').classList.remove('active');
                 localStorage.removeItem('cctv-settings');
