@@ -14,12 +14,20 @@ import re
 from threading import Lock
 from functools import wraps
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("python-dotenv not installed. Using system environment variables only.")
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Secret key for session management
 app.secret_key = os.getenv('SECRET_KEY', 'ai-ids-secret-key-change-in-production')
@@ -36,7 +44,7 @@ class Config:
     FPS = 20
     OBSTRUCTION_THRESHOLD = 0.85
     MOTION_THRESHOLD = 0.3
-    ALERT_EMAIL = None  # Set to email address for notifications
+    ALERT_EMAIL = os.getenv("ALERT_EMAIL", "")  # Load from environment variable
     # CCTV Recording Configuration
     RECORDINGS_DIR = "recordings"
     VIDEO_DURATION = 300  # 5 minutes per video file (seconds)
@@ -45,7 +53,6 @@ class Config:
     MOTION_DIFF_THRESHOLD = int(os.getenv("MOTION_DIFF_THRESHOLD", "2500"))
     BRIGHTNESS_LOW = int(os.getenv("BRIGHTNESS_LOW", "25"))
     COOLDOWN_SECONDS = int(os.getenv("COOLDOWN_SECONDS", "300"))
-    ALERT_EMAIL = os.getenv("ALERT_EMAIL", "")
     ALERT_PHONE = os.getenv("ALERT_PHONE", "")
     UPLOAD_FOLDER = 'static/events'
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -55,20 +62,7 @@ os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(Config.RECORDINGS_DIR, exist_ok=True)
 
 # User database (in production, use a proper database)
-USERS = {
-    'admin': {
-        'password': 'admin123',  # In production, use hashed passwords
-        'email': 'admin@ai-ids.local',
-        'role': 'Administrator',
-        'member_since': '2024-01-01'
-    },
-    'security': {
-        'password': 'security123',
-        'email': 'security@ai-ids.local',
-        'role': 'Security Officer',
-        'member_since': '2024-01-15'
-    }
-}
+USERS = {}  # Start with no users - must be created with admin code
 
 # Generate and store admin codes
 ADMIN_CODES = {}
@@ -131,7 +125,10 @@ runtime = {
     "manual_attack_logged": False,
     "inject_attack_start_time": None,
     "inject_attack_session_id": None,
-    "inject_attack_logged": False
+    "inject_attack_logged": False,
+    "camera_failure_count": 0,
+    "last_camera_retry": 0,
+    "camera_recovery_mode": False
 }
 
 # Camera management
@@ -164,6 +161,76 @@ def release_camera():
         video_writer.release()
         video_writer = None
         logger.info("Video recording stopped")
+
+def recover_camera():
+    """Attempt to recover camera connection with exponential backoff"""
+    global camera, runtime
+    
+    current_time = time.time()
+    
+    # Rate limit recovery attempts (minimum 2 seconds between attempts)
+    if current_time - runtime["last_camera_retry"] < 2:
+        return False
+    
+    runtime["last_camera_retry"] = current_time
+    runtime["camera_failure_count"] += 1
+    
+    # Release existing camera instance
+    if camera is not None:
+        try:
+            camera.release()
+        except:
+            pass
+        camera = None
+    
+    # Exponential backoff: 2^failure_count seconds, max 30 seconds
+    backoff_time = min(2 ** runtime["camera_failure_count"], 30)
+    
+    # Wait before retry
+    time.sleep(min(backoff_time, 5))  # Cap wait at 5 seconds for responsiveness
+    
+    logger.info(f"Camera recovery attempt #{runtime['camera_failure_count']} (backoff: {backoff_time}s)")
+    
+    try:
+        # Try different camera initialization methods
+        camera = cv2.VideoCapture(Config.CAMERA_INDEX, cv2.CAP_DSHOW)
+        if camera.isOpened():
+            # Test if camera can actually read frames
+            test_success, test_frame = camera.read()
+            if test_success and test_frame is not None:
+                runtime["camera_connected"] = True
+                runtime["camera_failure_count"] = 0
+                runtime["camera_recovery_mode"] = False
+                runtime["status"] = "Running"
+                logger.info("Camera recovered successfully")
+                log_event("CAMERA_RECOVERED", f"Camera recovered after {runtime['camera_failure_count']} attempts")
+                return True
+            else:
+                logger.warning("Camera opened but cannot read frames")
+                camera.release()
+                camera = None
+        else:
+            logger.warning(f"Failed to open camera {Config.CAMERA_INDEX}")
+            
+    except Exception as e:
+        logger.error(f"Camera recovery error: {str(e)}")
+        if camera is not None:
+            try:
+                camera.release()
+            except:
+                pass
+            camera = None
+    
+    runtime["camera_connected"] = False
+    runtime["camera_recovery_mode"] = True
+    
+    # If too many failures, suggest user intervention
+    if runtime["camera_failure_count"] >= 5:
+        logger.error("Camera recovery failed multiple times - may need physical check")
+        log_event("CAMERA_FAILURE", f"Camera recovery failed after {runtime['camera_failure_count']} attempts")
+        runtime["status"] = "Camera Recovery Needed"
+    
+    return False
 
 def start_new_recording():
     """Start a new video recording file"""
@@ -290,9 +357,10 @@ def profile():
     return render_template('profile.html')
 
 @app.route('/create-user')
-@login_required
 def create_user():
-    return render_template('create_user.html')
+    # Allow access to create user page without login
+    # Users need to create account before they can login
+    return render_template('create-user.html')
 
 @app.route('/api/verify-admin-code', methods=['POST'])
 def verify_admin_code():
@@ -367,6 +435,12 @@ def api_create_user():
         'role': 'Administrator',  # All users are administrators
         'member_since': datetime.now().strftime('%Y-%m-%d')
     }
+    
+    # Set this user's email as the default alert email if no email is configured
+    if not Config.ALERT_EMAIL or Config.ALERT_EMAIL == "admin@example.com":
+        Config.ALERT_EMAIL = email
+        os.environ['ALERT_EMAIL'] = email
+        logger.info(f"Alert email set to first user's email: {email}")
     
     # Remove used admin code
     del ADMIN_CODES[admin_code]
@@ -491,6 +565,85 @@ def api_get_user_profile():
             "success": False,
             "message": "User not found"
         }), 404
+
+@app.route('/api/settings/email', methods=['POST'])
+def update_email_settings():
+    """Update alert email settings"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        
+        if not email:
+            return jsonify({
+                "success": False,
+                "message": "Email address is required"
+            }), 400
+        
+        # Basic email validation
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({
+                "success": False,
+                "message": "Invalid email address format"
+            }), 400
+        
+        # Get current user from session
+        username = session.get('username')
+        if not username:
+            return jsonify({
+                "success": False,
+                "message": "User not logged in"
+            }), 401
+        
+        # Update user's email in the database
+        if username in USERS:
+            USERS[username]['email'] = email
+            # Update session email too
+            session['email'] = email
+            
+            logger.info(f"User {username} email updated to: {email}")
+            log_event("SETTINGS_UPDATE", f"User {username} email set to {email}")
+            
+            return jsonify({
+                "success": True,
+                "message": "Email settings updated successfully",
+                "email": email
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "User not found"
+            }), 404
+        
+    except Exception as e:
+        logger.error(f"Error updating email settings: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Failed to update email settings"
+        }), 500
+
+@app.route('/api/settings/email', methods=['GET'])
+def get_email_settings():
+    """Get current email settings"""
+    try:
+        # Get current user's email from session
+        user_email = session.get('email')
+        
+        # Fallback to Config.ALERT_EMAIL if no user session
+        if not user_email:
+            user_email = Config.ALERT_EMAIL
+        
+        return jsonify({
+            "success": True,
+            "email": user_email
+        })
+    except Exception as e:
+        logger.error(f"Error getting email settings: {e}")
+        return jsonify({
+            "success": False,
+            "message": "Failed to get email settings"
+        }), 500
 
 @app.route('/api/camera/start', methods=['POST'])
 @login_required
@@ -830,7 +983,7 @@ def _make_placeholder(msg="NO CAMERA"):
 # Detection functions
 
 def detect_obstruction(frame):
-    """Detect camera obstruction (lens covered by hand or any object)"""
+    """Detect camera obstruction (lens covered by hand or any object) - More robust detection"""
     current_time = time.time()
     
     # Calculate average brightness
@@ -844,23 +997,24 @@ def detect_obstruction(frame):
     is_obstructed = False
     reason = None
     
-    # Check if too dark (obstructed by hand or object)
-    if avg_brightness < Config.BRIGHTNESS_LOW:
+    # More lenient obstruction detection to avoid false positives
+    # Check if extremely dark (camera completely covered)
+    if avg_brightness < 10:  # Very dark threshold
         is_obstructed = True
-        reason = f"Camera obstructed (brightness: {avg_brightness:.1f})"
-    # Check for uniform color (lens covered by hand/paper/object)
-    elif std_dev_value < 15:  # Very low standard deviation means uniform color
+        reason = f"Camera completely obstructed (brightness: {avg_brightness:.1f})"
+    # Check for extremely uniform color (lens completely covered)
+    elif std_dev_value < 5:  # Very low standard deviation means uniform color
         is_obstructed = True
-        reason = f"Camera covered (low variance: {std_dev_value:.1f})"
-    # Additional check: if brightness drops suddenly compared to normal
-    elif avg_brightness < 50:  # Moderately dark but might be covered
+        reason = f"Camera completely covered (low variance: {std_dev_value:.1f})"
+    # Additional check: if brightness is extremely low
+    elif avg_brightness < 5:  # Extremely dark
         is_obstructed = True
-        reason = f"Camera partially covered (brightness: {avg_brightness:.1f})"
+        reason = f"Camera severely obstructed (brightness: {avg_brightness:.1f})"
     
     return is_obstructed, reason
 
 def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
-    """Handle the timing logic for obstruction alerts with grouped notifications"""
+    """Handle the timing logic for obstruction alerts with proper camera continuity"""
     if is_obstructed:
         if runtime["obstruction_start_time"] is None:
             # First detection of obstruction - start new session
@@ -871,25 +1025,26 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
             runtime["obstruction_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["session_logged"] = False
             logger.info("Camera obstruction detected - starting timer")
+            
+            # Send email alert at the start of obstruction attack
+            send_attack_email_alert("Camera Obstruction", reason, "obstruction")
         else:
             obstruction_duration = current_time - runtime["obstruction_start_time"]
             
             # 5-second sound alert (start continuous sound)
             if obstruction_duration >= 5 and not runtime["sound_alert_played"]:
                 logger.warning("Camera covered for 5 seconds - STARTING SOUND ALERT")
-                # Don't log SOUND_ALERT separately - include in session summary
                 runtime["sound_alert_played"] = True
                 runtime["sound_active"] = True
             
             # 20-second notification
             if obstruction_duration >= 20 and not runtime["obstruction_notified"]:
-                logger.error("🚨 CAMERA COVERED FOR 20 SECONDS - SENDING NOTIFICATION 🚨")
-                # Don't log NOTIFICATION separately - include in session summary
+                logger.error(" CAMERA COVERED FOR 20 SECONDS - SENDING NOTIFICATION ")
                 runtime["obstruction_notified"] = True
                 
                 # Always show console notification
                 print("\n" + "="*60)
-                print("🚨 CAMERA OBSTRUCTION ALERT 🚨")
+                print(" CAMERA OBSTRUCTION ALERT ")
                 print(f"Camera has been covered for {obstruction_duration:.0f} seconds")
                 print(f"Reason: {reason}")
                 print("="*60 + "\n")
@@ -907,25 +1062,16 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
             if obstruction_duration > 1 and not runtime["session_logged"]:  # Only log if obstruction lasted more than 1 second and not already logged
                 session_id = runtime.get("obstruction_session_id", datetime.now().strftime("%Y%m%d_%H%M%S"))
                 start_time = datetime.fromtimestamp(runtime["obstruction_start_time"]).strftime("%H:%M:%S")
-                end_time = datetime.fromtimestamp(current_time).strftime("%H:%M:%S")
                 
-                # Create session summary
-                summary_data = {
-                    "session_id": session_id,
-                    "start_time": start_time,
-                    "end_time": end_time,
-                    "duration": obstruction_duration,
-                    "reason": reason,
-                    "sound_alert": runtime["sound_alert_played"],
-                    "notification_sent": runtime["obstruction_notified"]
-                }
+                logger.info(f"Camera obstruction session ended - Duration: {obstruction_duration:.1f}s")
+                log_event("OBSTRUCTION_SESSION_END", 
+                         f"Camera obstruction session ended - Duration: {obstruction_duration:.1f}s, "
+                         f"Session ID: {session_id}, Start: {start_time}")
                 
-                log_event("OBSTRUCTION_SESSION", f"Camera obstruction: {start_time} - {end_time} ({obstruction_duration:.1f}s)", session_data=summary_data)
                 runtime["session_logged"] = True  # Mark as logged to prevent duplicates
             
             # Reset all obstruction tracking variables
             runtime["obstruction_start_time"] = None
-            runtime["obstruction_notified"] = False
             runtime["sound_alert_played"] = False
             runtime["sound_active"] = False
             runtime["obstruction_session_id"] = None
@@ -942,6 +1088,9 @@ def handle_manual_attack_timing(is_manual_attack, current_time):
             runtime["manual_attack_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["manual_attack_logged"] = False
             logger.info("Manual attack detected - starting session")
+            
+            # Send email alert at the start of manual attack
+            send_attack_email_alert("Manual Attack", "Manual attack triggered by user", "manual")
         return True
     else:
         # Reset manual attack timer if attack is no longer active
@@ -983,6 +1132,9 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
             runtime["inject_attack_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["inject_attack_logged"] = False
             logger.info("Inject attack detected - starting session")
+            
+            # Send email alert at the start of inject attack
+            send_attack_email_alert("Inject Attack", "Inject attack triggered by user", "inject")
         return True
     else:
         # Reset inject attack timer if attack is no longer active
@@ -1014,6 +1166,103 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
             runtime["inject_attack_logged"] = False
         
         return False
+
+def send_attack_email_alert(attack_type, reason, attack_category):
+    """Send email alert at the start of an attack"""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    try:
+        # Get current user's email from session (if available)
+        user_email = None
+        try:
+            from flask import session
+            user_email = session.get('email')
+            logger.info(f"User from session: {session.get('username')}")
+        except RuntimeError:
+            # Not in request context, fallback to Config.ALERT_EMAIL
+            logger.warning("Not in request context, using fallback email")
+        
+        # Fallback to Config.ALERT_EMAIL if no user session
+        if not user_email:
+            user_email = Config.ALERT_EMAIL
+        
+        if not user_email:
+            logger.warning("No user email available - notification not sent")
+            return
+        
+        # Check Gmail credentials
+        gmail_email = os.getenv('GMAIL_EMAIL')
+        gmail_password = os.getenv('GMAIL_APP_PASSWORD')
+        
+        logger.info(f"Attempting to send email alert to: {user_email}")
+        logger.info(f"Gmail configured: {bool(gmail_email and gmail_password)}")
+        
+        # Prepare email notification for attack start
+        subject = f"[AI-IDS ALERT] {attack_type} Detected"
+        body = f"""
+        SECURITY ALERT - {attack_type}
+        
+        Attack Type: {attack_type}
+        Reason: {reason}
+        Start Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+        Category: {attack_category}
+        
+        This is an automated alert from your AI Intrusion Detection System.
+        The attack has just been detected and monitoring is active.
+        
+        Please check the system immediately for details.
+        
+        --
+        AI Intrusion Detection System
+        Advanced CCTV Security Monitoring
+        """
+        
+        # Log notification attempt
+        logger.info(f"Preparing email with subject: {subject}")
+        
+        # Create message
+        msg = MIMEText(body, 'plain')
+        msg['Subject'] = subject
+        msg['From'] = gmail_email or 'ai-ids@localhost'
+        msg['To'] = user_email
+        
+        # Try Gmail first (more reliable)
+        try:
+            if gmail_email and gmail_password:
+                logger.info("Attempting Gmail SMTP...")
+                server = smtplib.SMTP('smtp.gmail.com', 587)
+                server.starttls()
+                server.login(gmail_email, gmail_password)
+                msg['From'] = gmail_email
+                server.send_message(msg)
+                server.quit()
+                logger.info(f"Attack alert email sent successfully via Gmail to {user_email}")
+            else:
+                logger.warning("Gmail credentials not configured, skipping Gmail attempt")
+                raise Exception("Gmail not configured")
+        except Exception as gmail_error:
+            logger.error(f"Gmail SMTP failed: {gmail_error}")
+            
+            # Try local mail server as fallback
+            try:
+                logger.info("Attempting local SMTP as fallback...")
+                server = smtplib.SMTP('localhost', 25)
+                msg['From'] = 'ai-ids@localhost'
+                server.send_message(msg)
+                server.quit()
+                logger.info(f"Attack alert email sent via local SMTP to {user_email}")
+            except Exception as local_error:
+                logger.error(f"Local SMTP also failed: {local_error}")
+                raise Exception("Both email methods failed")
+        
+        # Log the alert event
+        log_event("EMAIL_ALERT", f"{attack_type} alert sent to {user_email}")
+        
+    except Exception as e:
+        logger.error(f"Error sending attack alert email: {e}")
+        log_event("EMAIL_FAILED", f"Failed to send {attack_type} alert: {str(e)}")
 
 def send_notification_email(reason, duration):
     """Send email notification about camera obstruction"""
@@ -1122,11 +1371,18 @@ def gen_frames():
     
     while True:
         if not runtime["camera_connected"]:
-            if not init_camera():
-                time.sleep(2)
+            # Try to recover camera connection
+            if not recover_camera():
+                # Generate placeholder frame while camera is disconnected
+                placeholder = _make_placeholder(f"CAMERA RECOVERING... (Attempt {runtime['camera_failure_count']})")
+                with frame_lock:
+                    current_frame = placeholder
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + placeholder + b'\r\n')
+                time.sleep(0.1)  # Short sleep to prevent CPU spinning
                 continue
             
-            # Start recording when camera connects
+            # Start recording when camera recovers
             if recording_enabled and video_writer is None:
                 start_new_recording()
 
@@ -1135,7 +1391,14 @@ def gen_frames():
             if not success or frame is None:
                 logger.warning("Failed to read frame from camera")
                 runtime["camera_connected"] = False
-                time.sleep(1)
+                time.sleep(0.1)  # Brief pause before recovery attempt
+                continue
+
+            # Validate frame quality before processing
+            if frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+                logger.warning("Invalid frame dimensions")
+                runtime["camera_connected"] = False
+                time.sleep(0.1)
                 continue
 
             is_alert = False
@@ -1143,12 +1406,22 @@ def gen_frames():
             annotated_frame = frame.copy()
             
             # Resize frame for consistent recording
-            frame = cv2.resize(frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
-            annotated_frame = cv2.resize(annotated_frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
+            try:
+                frame = cv2.resize(frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
+                annotated_frame = cv2.resize(annotated_frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
+            except Exception as e:
+                logger.error(f"Frame resize error: {e}")
+                runtime["camera_connected"] = False
+                continue
             
             # Add timestamp to all frames for CCTV recording
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             annotated_frame = _add_annotation(annotated_frame, timestamp, (10, Config.FRAME_HEIGHT - 20), (255, 255, 255))
+            
+            # Add recovery indicator if we just recovered
+            if runtime["camera_recovery_mode"]:
+                annotated_frame = _add_annotation(annotated_frame, "CAMERA RECOVERED", (10, 50), (0, 255, 0))
+                runtime["camera_recovery_mode"] = False
             
             # Process frame based on current state
             if runtime["inject_enabled"]:
@@ -1173,6 +1446,8 @@ def gen_frames():
                 if obstruction_detected:
                     is_alert = True
                     alert_reason = obstruction_msg
+                    # Add obstruction indicator but continue processing
+                    annotated_frame = _add_annotation(annotated_frame, "OBSTRUCTION DETECTED", (10, 70), (0, 0, 255))
                 
                 # Add status text
                 if is_alert:
@@ -1222,7 +1497,7 @@ def gen_frames():
         except Exception as e:
             logger.error(f"Error in frame generation: {str(e)}")
             runtime["camera_connected"] = False
-            time.sleep(1)
+            time.sleep(0.1)  # Brief pause before recovery attempt
 
 # Cleanup on exit
 import atexit

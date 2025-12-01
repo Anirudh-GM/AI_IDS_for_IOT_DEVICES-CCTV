@@ -136,6 +136,46 @@
             text-decoration: underline;
         }
 
+        .create-user-section {
+            margin-top: 20px;
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .create-user-section p {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .create-user-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .create-user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .admin-code-hint {
+            margin-top: 10px;
+        }
+
+        .admin-code-hint small {
+            color: #999;
+            font-style: italic;
+        }
+
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -319,12 +359,19 @@
                 </button>
             </form>
 
-            <div class="divider">
-                <span>OR</span>
+            <div class="create-user-section">
+                <p>Don't have an account?</p>
+                <a href="/create-user" class="create-user-btn">
+                    <i class="fas fa-user-plus"></i>
+                    Create Administrator Account
+                </a>
+                <p class="admin-code-hint">
+                    <small>Note: You'll need an admin code to create an account</small>
+                </p>
             </div>
 
-            <div class="register-link">
-                Need an account? <a href="/create-user">Create New User</a>
+            <div class="divider">
+                <span>OR</span>
             </div>
 
             <div class="back-to-dashboard">

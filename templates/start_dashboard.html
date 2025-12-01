@@ -184,6 +184,9 @@
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .nav-item {
@@ -202,6 +205,21 @@
         .nav-item.active {
             background: rgba(0, 123, 255, 0.3);
             border-left: 4px solid #007bff;
+        }
+
+        .nav-item.logout-btn {
+            color: #ff6b6b;
+            border-left: 4px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .nav-item.logout-btn:hover {
+            background: rgba(255, 107, 107, 0.2);
+            border-left-color: #ff6b6b;
+        }
+
+        .nav-item.logout-btn i {
+            color: #ff6b6b;
         }
 
         /* Content Area */
@@ -905,6 +923,14 @@
             font-size: 14px;
         }
 
+        .setting-help {
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
         .setting-toggle {
             display: flex;
             align-items: center;
@@ -1014,6 +1040,10 @@
             <div class="nav-item" data-tab="settings">
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
+            </div>
+            <div class="nav-item logout-btn" onclick="logout(event)">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
             </div>
         </nav>
 
@@ -1279,6 +1309,12 @@
                 <h3><i class="fas fa-cog"></i> AI-IDS Settings</h3>
                     
                     <div class="setting-group">
+                        <label class="setting-label">Alert Email</label>
+                        <input type="email" class="setting-input" id="alert-email" placeholder="your.email@example.com">
+                        <small class="setting-help">Email address where security alerts will be sent</small>
+                    </div>
+                    
+                    <div class="setting-group">
                         <label class="setting-label">Motion Sensitivity</label>
                         <input type="range" class="setting-input" min="1" max="10" value="5">
                     </div>
@@ -1342,7 +1378,7 @@
                 
                 if (data.success && data.user) {
                     const username = data.user.username || 'User';
-                    const userInitial = username ? username.charAt(0).toUpperCase() : 'U';
+                    const userInitial = username && typeof username === 'string' ? username.charAt(0).toUpperCase() : 'U';
                     
                     // Update sessionStorage for consistency
                     sessionStorage.setItem('isLoggedIn', 'true');
@@ -1378,7 +1414,7 @@
                 
                 // Fallback to sessionStorage if API fails
                 const username = sessionStorage.getItem('username') || localStorage.getItem('username') || 'User';
-                const userInitial = username ? username.charAt(0).toUpperCase() : 'U';
+                const userInitial = username && typeof username === 'string' ? username.charAt(0).toUpperCase() : 'U';
                 
                 if (username !== 'User') {
                     // User has some session data, show it
@@ -1583,6 +1619,9 @@
             // Load recordings when recordings tab is clicked
             document.querySelector('[data-tab="recordings"]').addEventListener('click', loadRecordings);
             
+            // Load email settings when settings tab is clicked
+            document.querySelector('[data-tab="settings"]').addEventListener('click', loadEmailSettings);
+            
             // Load saved settings
             const savedSettings = localStorage.getItem('cctv-settings');
             if (savedSettings) {
@@ -1634,19 +1673,21 @@
 
         // Tab Navigation
         function initializeTabs() {
-            const navItems = document.querySelectorAll('.nav-item');
+            const navItems = document.querySelectorAll('.nav-item:not(.logout-btn)');
             navItems.forEach(item => {
                 item.addEventListener('click', function() {
                     const tabName = this.dataset.tab;
-                    switchTab(tabName);
+                    if (tabName) {
+                        switchTab(tabName);
+                    }
                 });
             });
         }
 
         function switchTab(tabName) {
             try {
-                // Update nav items
-                document.querySelectorAll('.nav-item').forEach(item => {
+                // Update nav items (exclude logout button)
+                document.querySelectorAll('.nav-item:not(.logout-btn)').forEach(item => {
                     item.classList.remove('active');
                 });
                 const targetNavItem = document.querySelector(`[data-tab="${tabName}"]`);
@@ -2682,22 +2723,74 @@
         }
 
         // Settings functions
-        function saveSettings() {
+        async function saveSettings() {
+            const alertEmail = document.getElementById('alert-email').value;
             const soundEnabled = document.getElementById('sound-toggle').classList.contains('active');
             const emailEnabled = document.getElementById('email-toggle').classList.contains('active');
             
-            // Save to localStorage (in a real app, this would be saved to backend)
-            localStorage.setItem('cctv-settings', JSON.stringify({
-                soundEnabled: soundEnabled,
-                emailEnabled: emailEnabled
-            }));
-            
-            // Show success message
-            showNotification('Settings saved successfully!', 'success');
+            try {
+                // Save email to backend
+                const emailResponse = await fetch('/api/settings/email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: alertEmail
+                    })
+                });
+                
+                const emailData = await emailResponse.json();
+                
+                if (!emailData.success) {
+                    showNotification('Failed to save email settings: ' + emailData.message, 'error');
+                    return;
+                }
+                
+                // Save other settings to localStorage
+                localStorage.setItem('cctv-settings', JSON.stringify({
+                    soundEnabled: soundEnabled,
+                    emailEnabled: emailEnabled
+                }));
+                
+                // Show success message
+                showNotification('Settings saved successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showNotification('Failed to save settings', 'error');
+            }
+        }
+
+        async function loadEmailSettings() {
+            try {
+                const response = await fetch('/api/settings/email');
+                const data = await response.json();
+                
+                if (data.success && data.email) {
+                    document.getElementById('alert-email').value = data.email;
+                } else {
+                    // Fallback to current user's email
+                    const userEmail = sessionStorage.getItem('email') || localStorage.getItem('email');
+                    if (userEmail) {
+                        document.getElementById('alert-email').value = userEmail;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading email settings:', error);
+                // Fallback to current user's email
+                const userEmail = sessionStorage.getItem('email') || localStorage.getItem('email');
+                if (userEmail) {
+                    document.getElementById('alert-email').value = userEmail;
+                }
+            }
         }
 
         function resetSettings() {
             if (confirm('Are you sure you want to reset all settings to default?')) {
+                // Reset to current user's email
+                const userEmail = sessionStorage.getItem('email') || localStorage.getItem('email') || '';
+                document.getElementById('alert-email').value = userEmail;
                 document.getElementById('sound-toggle').classList.remove('active');
                 document.getElementById('email-toggle').classList.remove('active');
                 localStorage.removeItem('cctv-settings');
