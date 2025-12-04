@@ -1,0 +1,15 @@
+{
+    "admin": {
+        "username": "admin",
+        "email": "admin@example.com",
+        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
+        "role": "admin"
+    },
+    "chaitanya": {
+        "username": "chaitanya",
+        "password": "feae54a36bf4bec5724e5b8ef2ead2bac088dbb10ff1d00903a5c9ae7d90d338",
+        "email": "chaitanyam23cy@rnsit.ac.in",
+        "role": "admin",
+        "created_at": "2025-11-30T16:55:52.180733"
+    }
+}
