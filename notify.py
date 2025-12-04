@@ -40,7 +40,7 @@ def send_email(subject, body, to_addrs):
 
 def send_sms(body, to_number):
     """SMS notification function (disabled)"""
-    logger.warning("SMS notifications are currently disabled. This feature requires Twilio integration.")
+    logger.warning("SMS notifications are currently disabled.")
     return False
 
 def notify_async(notification_type, *args, **kwargs):

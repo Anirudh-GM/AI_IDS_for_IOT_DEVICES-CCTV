@@ -15,7 +15,6 @@ import re
 from threading import Lock
 from functools import wraps
 import uuid
-# Twilio imports removed
 from email.mime.text import MIMEText
 import smtplib
 
@@ -62,7 +61,6 @@ class Config:
     UPLOAD_FOLDER = 'static/events'
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     # Notification settings
-    ALERT_PHONE = ''  # Phone number for SMS/WhatsApp (if implemented in the future)
 
 # Ensure directories exist
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
@@ -144,11 +142,9 @@ def get_user_by_username(username):
     """Get user information by username"""
     return USERS.get(username)
 
-    """WhatsApp notification function (disabled)"""
-    logger.warning("WhatsApp notifications are currently disabled. Please check the documentation to enable them.")
     return False
 
-def log_event(event_type, reason, session_id=None, session_data=None, send_whatsapp=True):
+def log_event(event_type, reason, session_id=None, session_data=None, ):
     """Log an event with timestamp and optional session data"""
     timestamp = datetime.now()
     entry = {
