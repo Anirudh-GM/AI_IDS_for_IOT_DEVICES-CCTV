@@ -1,15 +1,10 @@
 {
-    "admin": {
-        "username": "admin",
-        "email": "admin@example.com",
-        "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-        "role": "admin"
-    },
-    "chaitanya": {
-        "username": "chaitanya",
-        "password": "feae54a36bf4bec5724e5b8ef2ead2bac088dbb10ff1d00903a5c9ae7d90d338",
-        "email": "chaitanyam23cy@rnsit.ac.in",
+    "anirudh": {
+        "username": "anirudh",
+        "password": "a4800840acfe6365361777c7dfb63e0d1f577ad7a84259328afe62a5520495f9",
+        "email": "anirudhgm2020@gmail.com",
         "role": "admin",
-        "created_at": "2025-11-30T16:55:52.180733"
+        "receive_alerts": true,
+        "created_at": "2025-12-05T17:33:46.936219"
     }
 }

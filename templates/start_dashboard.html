@@ -35,6 +35,24 @@
             display: flex;
             flex-direction: column;
             gap: 5px;
+            align-items: flex-start;
+        }
+
+        .sidebar-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
         }
 
         .header h1 {
@@ -74,17 +92,21 @@
         .header .auth-link {
             color: white;
             text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.1);
+            padding: 10px 18px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
             transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .header .auth-link:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .header .auth-error {
@@ -184,6 +206,24 @@
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 20px 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar.collapsed {
+            width: 0;
+            padding: 20px 0;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .main-container.sidebar-collapsed {
+            margin-left: -250px;
         }
 
         .nav-item {
@@ -264,15 +304,16 @@
         /* Video Grid */
         .video-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 15px;
             margin-bottom: 20px;
+            max-width: 100%;
         }
 
         .video-panel {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
@@ -280,28 +321,61 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
             border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .video-title {
             font-weight: 600;
             color: #333;
+            font-size: 14px;
+        }
+
+        .video-status-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .video-status {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 4px;
+            font-size: 11px;
+            padding: 3px 6px;
+            border-radius: 3px;
             background: #28a745;
             color: white;
+        }
+
+        .camera-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+
+        .camera-status .status-text {
+            white-space: nowrap;
+        }
+
+        .camera-status.online {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+
+        .camera-status.offline {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
         }
 
         .video-feed {
             width: 100%;
             height: auto;
-            min-height: 400px;
+            min-height: 300px;
+            max-height: 450px;
             background: #000;
             border-radius: 6px;
             object-fit: contain;
@@ -943,8 +1017,33 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
             .sidebar {
-                width: 200px;
+                position: fixed;
+                left: 0;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 1000;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(0);
+            }
+            
+            .main-container.sidebar-collapsed {
+                margin-left: 0;
+            }
+            
+            .content {
+                padding: 10px;
             }
             
             .video-grid {
@@ -971,6 +1070,9 @@
 <body>
     <header class="header">
         <div class="header-left">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
             <h1><i class="fas fa-shield-alt"></i> AI Intrusion Detection System</h1>
             <div class="subtitle">Advanced CCTV Security Monitoring</div>
         </div>
@@ -1023,29 +1125,11 @@
                 <div class="control-panel">
                     <h3><i class="fas fa-sliders-h"></i> AI-IDS Controls</h3>
                     <div class="control-buttons">
-                        <button class="btn btn-primary" onclick="startDetection()">
-                            <i class="fas fa-play"></i> Start Detection
-                        </button>
-                        <button class="btn btn-danger" onclick="stopDetection()">
-                            <i class="fas fa-stop"></i> Stop Detection
-                        </button>
                         <button class="btn btn-warning" onclick="toggleManual()">
                             <i class="fas fa-exclamation-triangle"></i> Test Alert
                         </button>
                         <button class="btn btn-info" onclick="toggleInject()">
                             <i class="fas fa-bug"></i> Inject Attack
-                        </button>
-                        <button class="btn btn-success" onclick="toggleSound()">
-                            <i class="fas fa-volume-up"></i> Sound: ON
-                        </button>
-                        <button class="btn btn-primary" onclick="startCamera()" id="startCameraBtn">
-                            <i class="fas fa-video"></i> Start Camera
-                        </button>
-                        <button class="btn btn-danger" onclick="stopCamera()" id="stopCameraBtn" style="display: none;">
-                            <i class="fas fa-video-slash"></i> Stop Camera
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearLogs()">
-                            <i class="fas fa-trash"></i> Clear Logs
                         </button>
                     </div>
                 </div>
@@ -1054,9 +1138,8 @@
                     <div class="video-panel">
                         <div class="video-header">
                             <span class="video-title">Camera 1 - Main Entrance</span>
-                            <span class="video-status" id="cam1-status">LIVE</span>
-                            <div class="camera-status offline" id="cameraStatus">
-                                <span class="status-indicator offline"></span> Camera Disconnected
+                            <div class="video-status-container">
+                                <span class="video-status" id="cam1-status">LIVE</span>
                             </div>
                         </div>
                         <img id="video-feed" class="video-feed" src="/video_feed" alt="Camera Feed">
@@ -1089,6 +1172,12 @@
                                 <option value="OBSTRUCTION_SESSION">Obstruction Sessions</option>
                                 <option value="MANUAL_ATTACK_SESSION">Manual Attack Sessions</option>
                                 <option value="INJECT_ATTACK_SESSION">Inject Attack Sessions</option>
+                                <option value="AI_NETWORK_ATTACK">AI Network Attacks</option>
+                                <option value="DOS_FLOOD">DDoS Flood</option>
+                                <option value="PORT_SCAN">Port Scan</option>
+                                <option value="UNAUTHORIZED_ACCESS">Unauthorized Access</option>
+                                <option value="WEB_EXPLOIT">Web Exploit</option>
+                                <option value="ATTACK_SIMULATION">Attack Simulations</option>
                                 <option value="INFO">Info</option>
                             </select>
                         </div>
@@ -1183,16 +1272,16 @@
                 <!-- Summary Stats -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-value" id="total-events">0</div>
-                        <div class="stat-label">Total Events</div>
+                        <div class="stat-value" id="total-attacks">0</div>
+                        <div class="stat-label">Total Attacks</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="obstruction-events">0</div>
-                        <div class="stat-label">Obstruction Events</div>
+                        <div class="stat-value" id="network-attacks">0</div>
+                        <div class="stat-label">Network Attacks</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="alert-events">0</div>
-                        <div class="stat-label">Alert Events</div>
+                        <div class="stat-value" id="cctv-attacks">0</div>
+                        <div class="stat-label">CCTV Attacks</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="uptime">0h</div>
@@ -1320,6 +1409,31 @@
             alerts: 0
         };
 
+        // Sidebar toggle functionality
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContainer = document.querySelector('.main-container');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            sidebar.classList.toggle('collapsed');
+            mainContainer.classList.toggle('sidebar-collapsed');
+            
+            // Change icon based on sidebar state
+            if (sidebar.classList.contains('collapsed')) {
+                toggleBtn.innerHTML = '<i class="fas fa-bars"></i>';
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-times"></i>';
+            }
+        }
+
+        // Add event listener for sidebar toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', toggleSidebar);
+            }
+        });
+
         // Authentication functions
         async function updateAuthSection() {
             const authSection = document.getElementById('authSection');
@@ -1351,19 +1465,19 @@
                     sessionStorage.setItem('role', data.user?.role || 'User');
                     
                     authSection.innerHTML = `
-                        <div class="user-info">
-                            <div class="user-avatar">${userInitial}</div>
-                            <span>${username}</span>
-                            <a href="/profile" class="auth-link">
+                        <div class="user-info" style="display: flex; align-items: center; gap: 10px; margin-right: 10px;">
+                            <i class="fas fa-user-circle" style="font-size: 24px; color: #007bff;"></i>
+                            <span style="font-weight: 500;">${username}</span>
+                        </div>
+                        <a href="/profile" class="auth-link" style="background: rgba(0,123,255,0.3); border: 1px solid rgba(0,123,255,0.5);">
                             <i class="fas fa-user"></i>
-                            Profile
+                            <span>Profile</span>
                         </a>
-                        <a href="#" class="auth-link" onclick="logout(event)">
+                        <a href="#" class="auth-link" onclick="logout(event); return false;" style="background: rgba(220,53,69,0.3); border: 1px solid rgba(220,53,69,0.5);">
                             <i class="fas fa-sign-out-alt"></i>
-                            Logout
+                            <span>Logout</span>
                         </a>
-                    </div>
-                `;
+                    `;
             } else {
                 // This shouldn't happen since dashboard is protected, but handle gracefully
                 authSection.innerHTML = `
@@ -1383,19 +1497,19 @@
                 if (username !== 'User') {
                     // User has some session data, show it
                     authSection.innerHTML = `
-                        <div class="user-info">
-                            <div class="user-avatar">${userInitial}</div>
-                            <span>${username}</span>
-                            <a href="/profile" class="auth-link">
+                        <div class="user-info" style="display: flex; align-items: center; gap: 10px; margin-right: 10px;">
+                            <i class="fas fa-user-circle" style="font-size: 24px; color: #007bff;"></i>
+                            <span style="font-weight: 500;">${username}</span>
+                        </div>
+                        <a href="/profile" class="auth-link" style="background: rgba(0,123,255,0.3); border: 1px solid rgba(0,123,255,0.5);">
                             <i class="fas fa-user"></i>
-                            Profile
+                            <span>Profile</span>
                         </a>
-                        <a href="#" class="auth-link" onclick="logout(event)">
+                        <a href="#" class="auth-link" onclick="logout(event); return false;" style="background: rgba(220,53,69,0.3); border: 1px solid rgba(220,53,69,0.5);">
                             <i class="fas fa-sign-out-alt"></i>
-                            Logout
+                            <span>Logout</span>
                         </a>
-                    </div>
-                `;
+                    `;
                 } else {
                     // No user data found, show error
                     authSection.innerHTML = `
@@ -1409,26 +1523,29 @@
         }
 
         function logout(event) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
             if (confirm('Are you sure you want to logout?')) {
                 // Clear frontend storage
-                sessionStorage.removeItem('isLoggedIn');
-                sessionStorage.removeItem('username');
-                sessionStorage.removeItem('email');
-                localStorage.removeItem('isLoggedIn');
-                localStorage.removeItem('username');
-                localStorage.removeItem('email');
+                sessionStorage.clear();
+                localStorage.clear();
                 
                 // Call backend logout
                 fetch('/logout', {
-                    method: 'GET'
+                    method: 'GET',
+                    credentials: 'include'
                 }).then(() => {
                     window.location.href = '/login';
-                }).catch(() => {
+                }).catch((error) => {
+                    console.error('Logout error:', error);
                     // Even if backend call fails, redirect to login
                     window.location.href = '/login';
                 });
             }
+            return false;
         }
 
         // Initialize auth section on page load
@@ -1438,15 +1555,32 @@
             
             // Check camera status and update UI
             checkCameraStatus();
+            
+            // Initialize sidebar navigation (will be called again in window.onload, but this ensures early initialization)
+            setTimeout(() => {
+                if (typeof initializeTabs === 'function') {
+                    initializeTabs();
+                }
+            }, 100);
         });
 
         // Load recordings
         async function loadRecordings() {
             try {
+                // Check if elements exist
+                const dateFilterEl = document.getElementById('date-filter');
+                const sortByEl = document.getElementById('sort-by');
+                const sortOrderEl = document.getElementById('sort-order');
+                
+                if (!dateFilterEl || !sortByEl || !sortOrderEl) {
+                    console.warn('Recordings filter elements not found, tab may not be visible');
+                    return;
+                }
+                
                 // Get filter values
-                const dateFilter = document.getElementById('date-filter').value;
-                const sortBy = document.getElementById('sort-by').value;
-                const sortOrder = document.getElementById('sort-order').value;
+                const dateFilter = dateFilterEl.value || '';
+                const sortBy = sortByEl.value || 'date';
+                const sortOrder = sortOrderEl.value || 'desc';
                 
                 // Build query string
                 const queryParams = new URLSearchParams({
@@ -1512,15 +1646,27 @@
 
         // Update recordings statistics
         function updateRecordingsStats(stats) {
+            const totalFilesEl = document.getElementById('total-files');
+            const totalSizeEl = document.getElementById('total-size');
+            
+            if (!totalFilesEl || !totalSizeEl) {
+                console.warn('Recordings stats elements not found');
+                return;
+            }
+            
             if (stats) {
-                document.getElementById('total-files').textContent = stats.total_count || 0;
-                document.getElementById('total-size').textContent = formatFileSize(stats.total_size || 0);
+                totalFilesEl.textContent = stats.total_count || 0;
+                totalSizeEl.textContent = formatFileSize(stats.total_size || 0);
             }
         }
 
         // Update date filter dropdown
         function updateDateFilter(availableDates, selectedDate) {
             const dateFilter = document.getElementById('date-filter');
+            if (!dateFilter) {
+                console.warn('Date filter element not found');
+                return;
+            }
             const currentValue = dateFilter.value;
             
             // Clear existing options except "All Dates"
@@ -1570,18 +1716,34 @@
             loadRecordings();
         };
 
-        // Initialize
+        // Initialize - Optimized for faster loading
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize tab navigation
+            // Initialize tab navigation (critical - do first)
             initializeTabs();
             
+            // Start clock immediately (lightweight)
             updateClock();
             setInterval(updateClock, 1000);
-            setInterval(updateStatus, 2000);
-            setInterval(updateAnalytics, 5000);
             
-            // Load recordings when recordings tab is clicked
-            document.querySelector('[data-tab="recordings"]').addEventListener('click', loadRecordings);
+            // Defer heavy operations to improve initial page load
+            // Wait 500ms before first status update
+            setTimeout(() => {
+                updateStatus();
+                // Then start regular intervals
+                setInterval(updateStatus, 2000);
+            }, 500);
+            
+            // Defer analytics update (less critical)
+            setTimeout(() => {
+                updateAnalytics();
+                setInterval(updateAnalytics, 5000);
+            }, 1000);
+            
+            // Load recordings only when recordings tab is clicked (lazy loading)
+            const recordingsTab = document.querySelector('[data-tab="recordings"]');
+            if (recordingsTab) {
+                recordingsTab.addEventListener('click', loadRecordings);
+            }
             
             // Load saved settings
             const savedSettings = localStorage.getItem('cctv-settings');
@@ -1606,22 +1768,18 @@
             }
             
             // Sound toggle
-            document.getElementById('sound-toggle').addEventListener('click', function() {
-                this.classList.toggle('active');
-                soundEnabled = this.classList.contains('active');
-                
-                // Update the sound button in control panel
-                const soundBtn = document.querySelector('button[onclick="toggleSound()"]');
-                if (soundBtn) {
-                    soundBtn.innerHTML = soundEnabled ? 
-                        '<i class="fas fa-volume-up"></i> Sound: ON' : 
-                        '<i class="fas fa-volume-up"></i> Sound: OFF';
-                    soundBtn.className = soundEnabled ? 'btn btn-success' : 'btn btn-secondary';
-                }
-                
-                // Save settings
-                saveSettings();
-            });
+            const soundToggle = document.getElementById('sound-toggle');
+            if (soundToggle) {
+                soundToggle.addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    soundEnabled = this.classList.contains('active');
+                    
+                    // Save settings
+                    if (typeof saveSettings === 'function') {
+                        saveSettings();
+                    }
+                });
+            }
             
             // Email toggle
             document.getElementById('email-toggle').addEventListener('click', function() {
@@ -1632,15 +1790,30 @@
             updateStatus();
         });
 
-        // Tab Navigation
+        // Tab Navigation (unified function)
         function initializeTabs() {
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const tabName = this.dataset.tab;
-                    switchTab(tabName);
+                // Remove any existing listeners to prevent duplicates
+                const newItem = item.cloneNode(true);
+                item.parentNode.replaceChild(newItem, item);
+                
+                // Add click listener
+                newItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tabName = this.getAttribute('data-tab') || this.dataset.tab;
+                    if (tabName) {
+                        console.log('Tab clicked:', tabName);
+                        switchTab(tabName);
+                    }
                 });
             });
+        }
+        
+        // Alias for consistency
+        function initializeSidebarNavigation() {
+            initializeTabs();
         }
 
         function switchTab(tabName) {
@@ -1663,9 +1836,20 @@
                     targetTabContent.classList.add('active');
                 }
                 
-                // Load recordings if switching to recordings tab
+                // Load data when switching to specific tabs
                 if (tabName === 'recordings' && typeof loadRecordings === 'function') {
-                    loadRecordings();
+                    // Small delay to ensure tab is visible
+                    setTimeout(() => {
+                        loadRecordings();
+                    }, 100);
+                }
+                
+                // Load logs when switching to logs tab
+                if (tabName === 'logs' && typeof updateStatus === 'function') {
+                    // Trigger status update to load logs
+                    setTimeout(() => {
+                        updateStatus();
+                    }, 100);
                 }
             } catch (error) {
                 console.error('Error switching tab:', error);
@@ -1680,14 +1864,6 @@
         }
 
         // Control functions
-        async function startDetection() {
-            await sendControl('start');
-        }
-
-        async function stopDetection() {
-            await sendControl('stop');
-        }
-
         async function toggleManual() {
             await sendControl('toggle_manual');
         }
@@ -1698,22 +1874,28 @@
 
         async function toggleSound() {
             soundEnabled = !soundEnabled;
-            const btn = event.target.closest('.btn');
-            btn.innerHTML = soundEnabled ? 
-                '<i class="fas fa-volume-up"></i> Sound: ON' : 
-                '<i class="fas fa-volume-up"></i> Sound: OFF';
-            btn.className = soundEnabled ? 'btn btn-success' : 'btn btn-secondary';
+            const btn = event.target.closest('.btn') || document.getElementById('soundButton');
+            if (btn) {
+                btn.innerHTML = soundEnabled ? 
+                    '<i class="fas fa-volume-up"></i> Sound: ON' : 
+                    '<i class="fas fa-volume-up"></i> Sound: OFF';
+                btn.className = soundEnabled ? 'btn btn-success' : 'btn btn-secondary';
+            }
             
             // Sync with settings toggle
             const soundToggle = document.getElementById('sound-toggle');
-            if (soundEnabled) {
-                soundToggle.classList.add('active');
-            } else {
-                soundToggle.classList.remove('active');
+            if (soundToggle) {
+                if (soundEnabled) {
+                    soundToggle.classList.add('active');
+                } else {
+                    soundToggle.classList.remove('active');
+                }
             }
             
             // Save settings
-            saveSettings();
+            if (typeof saveSettings === 'function') {
+                saveSettings();
+            }
         }
 
         function clearLogs() {
@@ -1728,71 +1910,6 @@
         }
 
         // Camera control functions
-        async function startCamera() {
-            try {
-                const response = await fetch('/api/camera/start', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update UI
-                    document.getElementById('startCameraBtn').style.display = 'none';
-                    document.getElementById('stopCameraBtn').style.display = 'inline-block';
-                    
-                    // Refresh video feed
-                    const videoFeed = document.getElementById('videoFeed');
-                    if (videoFeed) {
-                        videoFeed.src = videoFeed.src.split('?')[0] + '?t=' + new Date().getTime();
-                    }
-                    
-                    // Update status
-                    updateCameraStatus(true);
-                    
-                    // Show success message
-                    showNotification('Camera started successfully', 'success');
-                } else {
-                    showNotification('Failed to start camera: ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error starting camera:', error);
-                showNotification('Error starting camera', 'error');
-            }
-        }
-
-        async function stopCamera() {
-            try {
-                const response = await fetch('/api/camera/stop', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Update UI
-                    document.getElementById('startCameraBtn').style.display = 'inline-block';
-                    document.getElementById('stopCameraBtn').style.display = 'none';
-                    
-                    // Update status
-                    updateCameraStatus(false);
-                    
-                    // Show success message
-                    showNotification('Camera stopped successfully', 'success');
-                } else {
-                    showNotification('Failed to stop camera: ' + data.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error stopping camera:', error);
-                showNotification('Error stopping camera', 'error');
-            }
-        }
 
         async function checkCameraStatus() {
             try {
@@ -1801,15 +1918,6 @@
                 
                 if (data.success) {
                     updateCameraStatus(data.camera_connected);
-                    
-                    // Update button visibility
-                    if (data.camera_connected) {
-                        document.getElementById('startCameraBtn').style.display = 'none';
-                        document.getElementById('stopCameraBtn').style.display = 'inline-block';
-                    } else {
-                        document.getElementById('startCameraBtn').style.display = 'inline-block';
-                        document.getElementById('stopCameraBtn').style.display = 'none';
-                    }
                 }
             } catch (error) {
                 console.error('Error checking camera status:', error);
@@ -1817,16 +1925,8 @@
         }
 
         function updateCameraStatus(isConnected) {
-            const statusElement = document.getElementById('cameraStatus');
-            if (statusElement) {
-                if (isConnected) {
-                    statusElement.innerHTML = '<span class="status-indicator online"></span> Camera Connected';
-                    statusElement.className = 'camera-status online';
-                } else {
-                    statusElement.innerHTML = '<span class="status-indicator offline"></span> Camera Disconnected';
-                    statusElement.className = 'camera-status offline';
-                }
-            }
+            // Disconnected text removed - status is now only shown via cam1-status
+            // This function is kept for compatibility but doesn't update disconnected text
         }
 
         function showNotification(message, type) {
@@ -1899,18 +1999,49 @@
         }
 
         function filterLogs() {
-            const filterType = document.getElementById('log-filter').value;
-            const groupingType = document.getElementById('log-grouping').value;
-            const searchTerm = document.getElementById('log-search').value.toLowerCase();
-            const logEntries = document.querySelectorAll('.log-entry');
+            const filterEl = document.getElementById('log-filter');
+            const groupingEl = document.getElementById('log-grouping');
+            const searchEl = document.getElementById('log-search');
+            const logContainer = document.getElementById('detection-log');
+            
+            if (!filterEl || !groupingEl || !searchEl || !logContainer) {
+                console.warn('Filter elements not found');
+                return;
+            }
+            
+            const filterType = filterEl.value;
+            const groupingType = groupingEl.value;
+            const searchTerm = searchEl.value.toLowerCase();
+            const logEntries = logContainer.querySelectorAll('.log-entry');
             
             logEntries.forEach(entry => {
-                const type = entry.querySelector('.log-type')?.textContent;
-                const message = entry.querySelector('.log-message')?.textContent.toLowerCase();
+                const typeEl = entry.querySelector('.log-type');
+                const messageEl = entry.querySelector('.log-message');
+                
+                if (!typeEl || !messageEl) {
+                    entry.style.display = 'none';
+                    return;
+                }
+                
+                const type = typeEl.textContent.trim();
+                const message = messageEl.textContent.toLowerCase();
                 const isGrouped = entry.classList.contains('obstruction-session');
                 
-                const matchesFilter = filterType === 'all' || type === filterType;
-                const matchesSearch = searchTerm === '' || message.includes(searchTerm);
+                // Match filter type (exact match or 'all')
+                let matchesFilter = filterType === 'all';
+                if (!matchesFilter) {
+                    // Check exact match
+                    matchesFilter = type === filterType;
+                    // Also check for partial matches for attack types
+                    if (!matchesFilter) {
+                        matchesFilter = type.includes(filterType) || filterType.includes(type);
+                    }
+                }
+                
+                // Match search term
+                const matchesSearch = searchTerm === '' || 
+                                    message.includes(searchTerm) || 
+                                    type.toLowerCase().includes(searchTerm);
                 
                 // Apply grouping filter
                 let matchesGrouping = true;
@@ -1920,25 +2051,55 @@
                     matchesGrouping = !isGrouped;
                 }
                 
+                // Show/hide entry based on all filters
                 entry.style.display = matchesFilter && matchesSearch && matchesGrouping ? 'flex' : 'none';
             });
         }
 
         function sortLogs() {
-            const sortType = document.getElementById('log-sort').value;
+            const sortEl = document.getElementById('log-sort');
+            if (!sortEl) {
+                console.warn('Sort element not found');
+                return;
+            }
+            
+            const sortType = sortEl.value;
             const logContainer = document.getElementById('detection-log');
+            
+            if (!logContainer) {
+                console.warn('Log container not found');
+                return;
+            }
+            
             const logEntries = Array.from(logContainer.querySelectorAll('.log-entry'));
+            
+            if (logEntries.length === 0) return;
             
             logEntries.sort((a, b) => {
                 switch(sortType) {
                     case 'newest':
                         const timeA = a.querySelector('.log-time')?.textContent || '';
                         const timeB = b.querySelector('.log-time')?.textContent || '';
+                        // Try to parse as date for better sorting
+                        try {
+                            const dateA = new Date(timeA);
+                            const dateB = new Date(timeB);
+                            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+                                return dateB - dateA;
+                            }
+                        } catch (e) {}
                         return timeB.localeCompare(timeA);
                     
                     case 'oldest':
                         const timeC = a.querySelector('.log-time')?.textContent || '';
                         const timeD = b.querySelector('.log-time')?.textContent || '';
+                        try {
+                            const dateC = new Date(timeC);
+                            const dateD = new Date(timeD);
+                            if (!isNaN(dateC.getTime()) && !isNaN(dateD.getTime())) {
+                                return dateC - dateD;
+                            }
+                        } catch (e) {}
                         return timeC.localeCompare(timeD);
                     
                     case 'type':
@@ -1955,6 +2116,9 @@
             logEntries.forEach(entry => {
                 logContainer.appendChild(entry);
             });
+            
+            // Re-apply filters after sorting
+            filterLogs();
         }
 
         // API communication
@@ -1978,10 +2142,20 @@
             }
         }
 
-        // Update system status
+        // Update system status (with request throttling)
+        let statusUpdateInProgress = false;
         async function updateStatus() {
+            // Prevent concurrent requests
+            if (statusUpdateInProgress) {
+                return;
+            }
+            
+            statusUpdateInProgress = true;
             try {
                 const response = await fetch('/api/status');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
                 
                 // Update header status
@@ -2004,13 +2178,24 @@
                     updateAnalytics(data.log);
                 }
                 
-                // Play sound if needed
+                // Play sound if needed (only when sound_active changes to true)
                 if (soundEnabled && data.sound_active && typeof playAlertSound === 'function') {
-                    playAlertSound();
+                    // Track previous sound_active state to play sound only once when it becomes true
+                    if (!window.lastSoundActive && data.sound_active) {
+                        playAlertSound();
+                        // Play sound multiple times for better visibility (3 beeps)
+                        setTimeout(() => playAlertSound(), 600);
+                        setTimeout(() => playAlertSound(), 1200);
+                    }
+                    window.lastSoundActive = data.sound_active;
+                } else {
+                    window.lastSoundActive = false;
                 }
                 
             } catch (error) {
                 console.error('Error updating status:', error);
+            } finally {
+                statusUpdateInProgress = false;
             }
         }
 
@@ -2047,6 +2232,12 @@
         function updateLog(logData) {
             const logEl = document.getElementById('detection-log');
             
+            // Check if log element exists
+            if (!logEl) {
+                console.warn('Log container element not found');
+                return;
+            }
+            
             if (!logData || logData.length === 0) {
                 if (logEl.children.length === 0) {
                     logEl.innerHTML = '<div class="log-entry"><span class="log-time">--:--:--</span><span class="log-type">INFO</span><span class="log-message">No detection events</span></div>';
@@ -2057,95 +2248,54 @@
             // Store complete log data for filtering/sorting
             window.allLogData = logData;
             
-            // Check if we need to rebuild or just add new entries
-            const existingEntries = logEl.querySelectorAll('.log-entry');
-            const existingCount = existingEntries.length;
-            
-            // If this is first load or log was cleared, rebuild everything
-            if (existingCount === 0 || existingCount === 1 && existingEntries[0].querySelector('.log-message')?.textContent === 'No detection events') {
-                logEl.innerHTML = '';
-                
-                // Apply same deduplication logic for initial load
-                const deduplicatedData = [];
-                const seenKeys = new Set();
-                
-                // Process in reverse order (newest first) to keep only the first occurrence
-                [...logData].reverse().forEach(entry => {
-                    let uniqueKey;
-                    if (entry.event_type === 'ALERT' && entry.reason === 'Manual attack triggered') {
-                        const entryTime = new Date(entry.time);
-                        const timeKey = `${entryTime.getFullYear()}-${entryTime.getMonth()}-${entryTime.getDate()} ${entryTime.getHours()}:${entryTime.getMinutes()}:${entryTime.getSeconds()}`;
-                        uniqueKey = `${timeKey}|${entry.event_type}|${entry.reason}`;
-                    } else if (entry.event_type === 'ALERT' && entry.reason === 'Inject attack triggered') {
-                        const entryTime = new Date(entry.time);
-                        const timeKey = `${entryTime.getFullYear()}-${entryTime.getMonth()}-${entryTime.getDate()} ${entryTime.getHours()}:${entryTime.getMinutes()}:${entryTime.getSeconds()}`;
-                        uniqueKey = `${timeKey}|${entry.event_type}|${entry.reason}`;
-                    } else {
-                        uniqueKey = `${entry.time}|${entry.event_type}|${entry.reason}`;
-                    }
-                    
-                    if (!seenKeys.has(uniqueKey)) {
-                        deduplicatedData.push(entry);
-                        seenKeys.add(uniqueKey);
-                    }
-                });
-                
-                // Limit to 50 entries
-                deduplicatedData.slice(0, 50).forEach(entry => {
-                    const logEntry = createLogEntry(entry);
-                    logEl.appendChild(logEntry);
-                });
-            } else {
-                // Create a unique identifier for each entry to check for duplicates
-                const existingEntriesMap = new Map();
-                Array.from(existingEntries).forEach(entry => {
-                    const time = entry.querySelector('.log-time')?.textContent;
-                    const type = entry.querySelector('.log-type')?.textContent;
-                    const message = entry.querySelector('.log-message')?.textContent.replace(/[\r\n]+/g, ' ').trim();
-                    const uniqueKey = `${time}|${type}|${message}`;
-                    existingEntriesMap.set(uniqueKey, true);
-                });
-                
-                // Add only new entries that don't already exist (limit to last 50 to prevent overflow)
-                // Get the latest 50 entries from logData
-                const latestData = [...logData].reverse().slice(0, 50);
-                
-                latestData.forEach(entry => {
-                    // For alerts with the same reason within a short time, create a time-based key
-                    let uniqueKey;
-                    if (entry.event_type === 'ALERT' && entry.reason === 'Manual attack triggered') {
-                        // For manual attacks, group by second to prevent duplicates
-                        const entryTime = new Date(entry.time);
-                        const timeKey = `${entryTime.getFullYear()}-${entryTime.getMonth()}-${entryTime.getDate()} ${entryTime.getHours()}:${entryTime.getMinutes()}:${entryTime.getSeconds()}`;
-                        uniqueKey = `${timeKey}|${entry.event_type}|${entry.reason}`;
-                    } else if (entry.event_type === 'ALERT' && entry.reason === 'Inject attack triggered') {
-                        // For inject attacks, group by second
-                        const entryTime = new Date(entry.time);
-                        const timeKey = `${entryTime.getFullYear()}-${entryTime.getMonth()}-${entryTime.getDate()} ${entryTime.getHours()}:${entryTime.getMinutes()}:${entryTime.getSeconds()}`;
-                        uniqueKey = `${timeKey}|${entry.event_type}|${entry.reason}`;
-                    } else {
-                        // For other events, use exact match
-                        uniqueKey = `${entry.time}|${entry.event_type}|${entry.reason}`;
-                    }
-                    
-                    if (!existingEntriesMap.has(uniqueKey)) {
-                        const logEntry = createLogEntry(entry);
-                        logEl.insertBefore(logEntry, logEl.firstChild);
-                        existingEntriesMap.set(uniqueKey, true); // Mark as added
-                    }
-                });
-                
-                // Remove excess entries if more than 50
-                const allEntries = logEl.querySelectorAll('.log-entry');
-                if (allEntries.length > 50) {
-                    for (let i = allEntries.length - 1; i >= 50; i--) {
-                        allEntries[i].remove();
-                    }
-                }
+            // Initialize displayed IDs set if not exists
+            if (!window.displayedLogIds) {
+                window.displayedLogIds = new Set();
             }
             
-            // Apply current filters
-            filterLogs();
+            // Get currently displayed log IDs
+            const existingIds = new Set();
+            const existingEntries = logEl.querySelectorAll('.log-entry');
+            existingEntries.forEach(entry => {
+                const logId = entry.getAttribute('data-log-id');
+                if (logId) {
+                    existingIds.add(logId);
+                    window.displayedLogIds.add(logId);
+                }
+            });
+            
+            // Sort logs by timestamp (newest first) for display
+            const sortedLogs = [...logData].sort((a, b) => {
+                const timeA = a.timestamp || a.time || '';
+                const timeB = b.timestamp || b.time || '';
+                return timeB.localeCompare(timeA);
+            });
+            
+            // Always rebuild to ensure consistency with backend data
+            logEl.innerHTML = '';
+            window.displayedLogIds.clear();
+            
+            // Ensure all entries have IDs
+            sortedLogs.forEach(entry => {
+                if (!entry.id) {
+                    entry.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+            });
+            
+            // Display latest 200 entries (newest first)
+            sortedLogs.slice(0, 200).forEach(entry => {
+                if (!window.displayedLogIds.has(entry.id)) {
+                    const logEntry = createLogEntry(entry);
+                    logEntry.setAttribute('data-log-id', entry.id);
+                    logEl.appendChild(logEntry);
+                    window.displayedLogIds.add(entry.id);
+                }
+            });
+            
+            // Apply current filters after display
+            setTimeout(() => {
+                filterLogs();
+            }, 100);
         }
 
         function createLogEntry(entry) {
@@ -2173,8 +2323,27 @@
                     icon = 'fa-bug';
                 }
                 
+                // Format time properly
+                let displayTime = entry.time || entry.timestamp || 'N/A';
+                if (entry.timestamp && !entry.time) {
+                    try {
+                        const date = new Date(entry.timestamp);
+                        displayTime = date.toLocaleString('en-US', { 
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit',
+                            hour12: false 
+                        });
+                    } catch (e) {
+                        displayTime = entry.timestamp;
+                    }
+                }
+                
                 logEntry.innerHTML = `
-                    <span class="log-time">${entry.time || 'N/A'}</span>
+                    <span class="log-time">${displayTime}</span>
                     <span class="log-type" style="background: ${typeColor}; color: white;">${entry.event_type || 'INFO'}</span>
                     <span class="log-message">
                         <i class="fas ${icon} session-toggle"></i>
@@ -2200,8 +2369,27 @@
                 case 'INFO': typeColor = '#6c757d'; break;
             }
             
+            // Format time properly
+            let displayTime = entry.time || entry.timestamp || 'N/A';
+            if (entry.timestamp && !entry.time) {
+                try {
+                    const date = new Date(entry.timestamp);
+                    displayTime = date.toLocaleString('en-US', { 
+                        year: 'numeric', 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit',
+                        hour12: false 
+                    });
+                } catch (e) {
+                    displayTime = entry.timestamp;
+                }
+            }
+            
             logEntry.innerHTML = `
-                <span class="log-time">${entry.time || 'N/A'}</span>
+                <span class="log-time">${displayTime}</span>
                 <span class="log-type" style="background: ${typeColor}; color: white;">${entry.event_type || 'INFO'}</span>
                 <span class="log-message">${entry.reason || 'No reason provided'}</span>
             `;
@@ -2300,54 +2488,143 @@
             return details;
         }
 
-        function updateAnalytics(logData) {
-            // Calculate uptime
-            const uptime = Date.now() - startTime;
-            const hours = Math.floor(uptime / (1000 * 60 * 60));
-            const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
-            document.getElementById('uptime').textContent = `${hours}h ${minutes}m`;
+        // Filter attack events only (exclude login/logout and other non-attack events)
+        function filterAttackEvents(logData) {
+            if (!logData || !Array.isArray(logData)) return [];
             
-            // Calculate actual statistics from log data
-            if (logData && logData.length > 0) {
-                const totalEvents = logData.length;
-                const obstructionEvents = logData.filter(entry => 
-                    entry.event_type === 'OBSTRUCTION_SESSION'
-                ).length;
-                const manualAttackEvents = logData.filter(entry => 
-                    entry.event_type === 'MANUAL_ATTACK_SESSION'
-                ).length;
-                const injectAttackEvents = logData.filter(entry => 
-                    entry.event_type === 'INJECT_ATTACK_SESSION'
-                ).length;
-                const alertEvents = logData.filter(entry => 
-                    entry.event_type === 'ALERT'
-                ).length;
+            // Define attack event types
+            const attackEventTypes = [
+                'DOS_FLOOD', 'DDOS',
+                'PORT_SCAN',
+                'BRUTE_FORCE', 'BRUTE_FORCE_ATTEMPT',
+                'UNAUTHORIZED_ACCESS',
+                'WEB_EXPLOIT',
+                'AI_NETWORK_ATTACK',
+                'VIDEO_INJECTION',
+                'FRAME_FREEZE',
+                'MOTION_MASKING',
+                'CABLE_CUTTING',
+                'OBSTRUCTION_DETECTED', 'OBSTRUCTION_SESSION',
+                'INJECT_ATTACK_SESSION', 'INJECT_ATTACK_TRIGGER',
+                'MANUAL_ATTACK_SESSION', 'MANUAL_ATTACK_TRIGGER',
+                'ALERT' // Include alerts as they may indicate attacks
+            ];
+            
+            return logData.filter(entry => {
+                const eventType = entry.event_type || '';
+                return attackEventTypes.includes(eventType);
+            });
+        }
+        
+        function getAttackFriendlyName(eventType) {
+            const friendlyNames = {
+                'DOS_FLOOD': 'DDoS/DoS Flood',
+                'DDOS': 'DDoS/DoS Flood',
+                'PORT_SCAN': 'Port Scan',
+                'BRUTE_FORCE': 'Brute Force',
+                'BRUTE_FORCE_ATTEMPT': 'Brute Force',
+                'UNAUTHORIZED_ACCESS': 'Unauthorized Access',
+                'WEB_EXPLOIT': 'Web Exploit',
+                'AI_NETWORK_ATTACK': 'AI Network Attack',
+                'VIDEO_INJECTION': 'Video Injection',
+                'FRAME_FREEZE': 'Frame Freeze',
+                'MOTION_MASKING': 'Motion Masking',
+                'CABLE_CUTTING': 'Cable Cutting',
+                'OBSTRUCTION_DETECTED': 'Obstruction',
+                'OBSTRUCTION_SESSION': 'Obstruction',
+                'INJECT_ATTACK_SESSION': 'Inject Attack',
+                'INJECT_ATTACK_TRIGGER': 'Inject Attack',
+                'MANUAL_ATTACK_SESSION': 'Manual Attack',
+                'MANUAL_ATTACK_TRIGGER': 'Manual Attack',
+                'ALERT': 'Alert'
+            };
+            return friendlyNames[eventType] || eventType;
+        }
+
+        // Analytics update with throttling
+        let analyticsUpdateInProgress = false;
+        function updateAnalytics(logData) {
+            // Prevent concurrent analytics updates
+            if (analyticsUpdateInProgress) {
+                return;
+            }
+            
+            analyticsUpdateInProgress = true;
+            
+            try {
+                // Calculate uptime (lightweight)
+                const uptime = Date.now() - startTime;
+                const hours = Math.floor(uptime / (1000 * 60 * 60));
+                const minutes = Math.floor((uptime % (1000 * 60 * 60)) / (1000 * 60));
+                const uptimeElement = document.getElementById('uptime');
+                if (uptimeElement) {
+                    uptimeElement.textContent = `${hours}h ${minutes}m`;
+                }
                 
-                // Update stats with real data
-                document.getElementById('total-events').textContent = totalEvents;
-                document.getElementById('obstruction-events').textContent = obstructionEvents;
-                document.getElementById('alert-events').textContent = alertEvents;
+                // Filter to only attack events
+                const attackData = filterAttackEvents(logData);
                 
-                // Update global stats for other functions
-                eventStats = {
-                    total: totalEvents,
-                    obstruction: obstructionEvents,
-                    alerts: alertEvents
-                };
-                
-                // Update charts
-                updateCharts(logData);
-                
-                // Update security score
-                updateSecurityScore(logData);
-            } else {
-                // Default to zero if no data
-                document.getElementById('total-events').textContent = '0';
-                document.getElementById('obstruction-events').textContent = '0';
-                document.getElementById('alert-events').textContent = '0';
-                
-                // Clear charts
-                clearCharts();
+                // Calculate actual statistics from attack data only
+                if (attackData && attackData.length > 0) {
+                    // Network attacks
+                    const networkAttacks = attackData.filter(entry => {
+                        const type = entry.event_type || '';
+                        return ['DOS_FLOOD', 'DDOS', 'PORT_SCAN', 'BRUTE_FORCE', 'BRUTE_FORCE_ATTEMPT', 
+                                'UNAUTHORIZED_ACCESS', 'WEB_EXPLOIT', 'AI_NETWORK_ATTACK'].includes(type);
+                    }).length;
+                    
+                    // CCTV attacks
+                    const cctvAttacks = attackData.filter(entry => {
+                        const type = entry.event_type || '';
+                        return ['VIDEO_INJECTION', 'FRAME_FREEZE', 'MOTION_MASKING', 'CABLE_CUTTING',
+                                'OBSTRUCTION_DETECTED', 'OBSTRUCTION_SESSION', 'INJECT_ATTACK_SESSION',
+                                'INJECT_ATTACK_TRIGGER', 'MANUAL_ATTACK_SESSION', 'MANUAL_ATTACK_TRIGGER'].includes(type);
+                    }).length;
+                    
+                    const totalAttacks = attackData.length;
+                    
+                    // Update stats with real attack data
+                    const totalAttacksEl = document.getElementById('total-attacks');
+                    const networkAttacksEl = document.getElementById('network-attacks');
+                    const cctvAttacksEl = document.getElementById('cctv-attacks');
+                    
+                    if (totalAttacksEl) totalAttacksEl.textContent = totalAttacks;
+                    if (networkAttacksEl) networkAttacksEl.textContent = networkAttacks;
+                    if (cctvAttacksEl) cctvAttacksEl.textContent = cctvAttacks;
+                    
+                    // Update global stats for other functions
+                    eventStats = {
+                        total: totalAttacks,
+                        network: networkAttacks,
+                        cctv: cctvAttacks
+                    };
+                    
+                    // Update charts with attack data only
+                    if (typeof updateCharts === 'function') {
+                        updateCharts(attackData);
+                    }
+                    
+                    // Update security score with attack data
+                    if (typeof updateSecurityScore === 'function') {
+                        updateSecurityScore(attackData);
+                    }
+                } else {
+                    // Default to zero if no attack data
+                    const totalAttacksEl = document.getElementById('total-attacks');
+                    const networkAttacksEl = document.getElementById('network-attacks');
+                    const cctvAttacksEl = document.getElementById('cctv-attacks');
+                    
+                    if (totalAttacksEl) totalAttacksEl.textContent = '0';
+                    if (networkAttacksEl) networkAttacksEl.textContent = '0';
+                    if (cctvAttacksEl) cctvAttacksEl.textContent = '0';
+                    
+                    // Clear charts
+                    if (typeof clearCharts === 'function') {
+                        clearCharts();
+                    }
+                }
+            } finally {
+                analyticsUpdateInProgress = false;
             }
         }
 
@@ -2370,25 +2647,50 @@
 
         function drawPieChart(logData) {
             const canvas = document.getElementById('event-pie-chart');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            const period = document.getElementById('pie-chart-period').value;
+            const periodEl = document.getElementById('pie-chart-period');
+            const period = periodEl ? periodEl.value : 'all';
             
-            // Filter data based on period
+            // Filter to only attack events
             const filteredData = filterDataByPeriod(logData, period);
+            const attackData = filterAttackEvents(filteredData);
             
-            // Count event types
+            if (attackData.length === 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No attack data', canvas.width / 2, canvas.height / 2);
+                const legendEl = document.getElementById('pie-legend');
+                if (legendEl) legendEl.innerHTML = '';
+                return;
+            }
+            
+            // Count attack types with friendly names
             const eventCounts = {};
-            filteredData.forEach(entry => {
-                eventCounts[entry.event_type] = (eventCounts[entry.event_type] || 0) + 1;
+            attackData.forEach(entry => {
+                const type = entry.event_type || 'UNKNOWN';
+                const friendlyName = getAttackFriendlyName(type);
+                eventCounts[friendlyName] = (eventCounts[friendlyName] || 0) + 1;
             });
             
-            // Prepare data for pie chart
+            // Prepare data for pie chart with attack-specific colors
             const colors = {
-                'ALERT': '#dc3545',
-                'OBSTRUCTION_SESSION': '#17a2b8',
-                'MANUAL_ATTACK_SESSION': '#dc3545',
-                'INJECT_ATTACK_SESSION': '#fd7e14',
-                'INFO': '#6c757d'
+                'DDoS/DoS Flood': '#dc3545',
+                'Port Scan': '#ff6b6b',
+                'Brute Force': '#ee5a6f',
+                'Unauthorized Access': '#c44569',
+                'Web Exploit': '#f8b500',
+                'AI Network Attack': '#ffa502',
+                'Video Injection': '#fd7e14',
+                'Frame Freeze': '#ff6348',
+                'Motion Masking': '#ff4757',
+                'Cable Cutting': '#ff3838',
+                'Obstruction': '#17a2b8',
+                'Inject Attack': '#fd7e14',
+                'Manual Attack': '#dc3545',
+                'Alert': '#ff6b6b'
             };
             
             const data = Object.keys(eventCounts).map(type => ({
@@ -2440,35 +2742,65 @@
 
         function drawTimelineChart(logData) {
             const canvas = document.getElementById('timeline-chart');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            const period = document.getElementById('timeline-period').value;
+            const periodEl = document.getElementById('timeline-period');
+            const period = periodEl ? periodEl.value : 'hour';
             
+            // Filter to only attack events
             const filteredData = filterDataByPeriod(logData, period);
+            const attackData = filterAttackEvents(filteredData);
             
-            // Group events by time
+            if (attackData.length === 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No attack data', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            // Group attack events by time
             const timeGroups = {};
-            filteredData.forEach(entry => {
-                const time = new Date(entry.time);
-                let key;
-                
-                switch(period) {
-                    case 'hour':
-                        key = time.getMinutes();
-                        break;
-                    case 'day':
-                        key = time.getHours();
-                        break;
-                    case 'week':
-                        key = time.getDay();
-                        break;
-                    default:
-                        key = time.getHours();
+            attackData.forEach(entry => {
+                try {
+                    const entryTime = entry.time || entry.timestamp;
+                    if (!entryTime) return;
+                    
+                    let time;
+                    if (typeof entryTime === 'string') {
+                        time = new Date(entryTime);
+                        if (isNaN(time.getTime())) {
+                            time = new Date(entryTime.replace(/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/, '$1T$2'));
+                        }
+                    } else {
+                        time = new Date(entryTime);
+                    }
+                    
+                    if (isNaN(time.getTime())) return;
+                    
+                    let key;
+                    switch(period) {
+                        case 'hour':
+                            key = time.getMinutes();
+                            break;
+                        case 'day':
+                            key = time.getHours();
+                            break;
+                        case 'week':
+                            key = time.getDay();
+                            break;
+                        default:
+                            key = time.getHours();
+                    }
+                    
+                    if (!timeGroups[key]) {
+                        timeGroups[key] = 0;
+                    }
+                    timeGroups[key]++;
+                } catch (e) {
+                    // Skip entries with invalid dates
                 }
-                
-                if (!timeGroups[key]) {
-                    timeGroups[key] = 0;
-                }
-                timeGroups[key]++;
             });
             
             // Draw timeline
@@ -2535,27 +2867,51 @@
 
         function drawTypeBreakdown(logData) {
             const canvas = document.getElementById('type-breakdown');
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
             
-            // Count event types
+            // Filter to only attack events
+            const attackData = filterAttackEvents(logData);
+            
+            if (attackData.length === 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#666';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No attack data', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+            
+            // Count attack types with friendly names
             const typeCounts = {};
-            logData.forEach(entry => {
-                typeCounts[entry.event_type] = (typeCounts[entry.event_type] || 0) + 1;
+            attackData.forEach(entry => {
+                const type = entry.event_type || 'UNKNOWN';
+                const friendlyName = getAttackFriendlyName(type);
+                typeCounts[friendlyName] = (typeCounts[friendlyName] || 0) + 1;
             });
             
             const types = Object.keys(typeCounts);
             const counts = Object.values(typeCounts);
-            const maxCount = Math.max(...counts);
-            const barHeight = canvas.height / types.length;
+            const maxCount = Math.max(...counts, 1);
+            const barHeight = canvas.height / Math.max(types.length, 1);
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             const colors = {
-                'ALERT': '#dc3545',
-                'OBSTRUCTION_SESSION': '#17a2b8',
-                'MANUAL_ATTACK_SESSION': '#dc3545',
-                'INJECT_ATTACK_SESSION': '#fd7e14',
-                'INFO': '#6c757d'
+                'DDoS/DoS Flood': '#dc3545',
+                'Port Scan': '#ff6b6b',
+                'Brute Force': '#ee5a6f',
+                'Unauthorized Access': '#c44569',
+                'Web Exploit': '#f8b500',
+                'AI Network Attack': '#ffa502',
+                'Video Injection': '#fd7e14',
+                'Frame Freeze': '#ff6348',
+                'Motion Masking': '#ff4757',
+                'Cable Cutting': '#ff3838',
+                'Obstruction': '#17a2b8',
+                'Inject Attack': '#fd7e14',
+                'Manual Attack': '#dc3545',
+                'Alert': '#ff6b6b'
             };
             
             types.forEach((type, index) => {
@@ -2611,6 +2967,8 @@
         }
 
         function filterDataByPeriod(logData, period) {
+            if (!logData || logData.length === 0) return [];
+            
             const now = new Date();
             const cutoff = new Date();
             
@@ -2620,6 +2978,9 @@
                     break;
                 case 'today':
                     cutoff.setHours(0, 0, 0, 0);
+                    cutoff.setMinutes(0);
+                    cutoff.setSeconds(0);
+                    cutoff.setMilliseconds(0);
                     break;
                 case 'day':
                     cutoff.setDate(now.getDate() - 1);
@@ -2631,7 +2992,30 @@
                     return logData;
             }
             
-            return logData.filter(entry => new Date(entry.time) >= cutoff);
+            return logData.filter(entry => {
+                try {
+                    const entryTime = entry.time || entry.timestamp;
+                    if (!entryTime) return false;
+                    
+                    // Try to parse as Date
+                    let entryDate;
+                    if (typeof entryTime === 'string') {
+                        // Try ISO format first
+                        entryDate = new Date(entryTime);
+                        // If that fails, try the time format
+                        if (isNaN(entryDate.getTime())) {
+                            entryDate = new Date(entryTime.replace(/(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2})/, '$1T$2'));
+                        }
+                    } else {
+                        entryDate = new Date(entryTime);
+                    }
+                    
+                    return !isNaN(entryDate.getTime()) && entryDate >= cutoff;
+                } catch (e) {
+                    // If parsing fails, include the entry (better to show than hide)
+                    return true;
+                }
+            });
         }
 
         function updateLegend(legendId, data) {
@@ -2664,21 +3048,42 @@
         }
 
         function playAlertSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5);
+            try {
+                // Use Web Audio API for better control
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Resume audio context if suspended (required by some browsers)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Higher frequency and louder for better visibility
+                oscillator.frequency.value = 1000; // Higher pitch
+                oscillator.type = 'sine';
+                
+                // Louder volume (0.5 instead of 0.3)
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (error) {
+                console.error('Error playing alert sound:', error);
+                // Fallback: try using HTML5 Audio if Web Audio API fails
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OSfTgwOUKfk8LZjHAY4kdfyzHksBSR3x/DdkEAKFF606euoVRQKRp/g8r5sIQUrgc7y2Yk2CBtpvfDkn04MDlCn5PC2YxwGOJHX8sx5LAUkd8fw3ZBAC');
+                    audio.volume = 0.7;
+                    audio.play().catch(e => console.error('Audio play failed:', e));
+                } catch (e) {
+                    console.error('Fallback audio also failed:', e);
+                }
+            }
         }
 
         // Settings functions

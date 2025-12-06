@@ -1,0 +1,50 @@
+[
+  {
+    "id": "53beab87-2c8c-4c3b-acfe-721b9453ec42",
+    "timestamp": "2025-12-06T09:04:52.821785",
+    "time": "2025-12-06 09:04:52",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "75df9e9d-310d-4345-9b57-ab520f6fd012",
+    "timestamp": "2025-12-06T09:05:09.084947",
+    "time": "2025-12-06 09:05:09",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "72558342-d77f-437d-9b26-776736922a73",
+    "timestamp": "2025-12-06T09:13:36.805251",
+    "time": "2025-12-06 09:13:36",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "8c18151d-2505-4305-b5f7-a39d76f11385",
+    "timestamp": "2025-12-06T09:13:48.522851",
+    "time": "2025-12-06 09:13:48",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "2877c9f5-43e6-4720-b76f-6f770de06341",
+    "timestamp": "2025-12-06T09:16:18.261671",
+    "time": "2025-12-06 09:16:18",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 49.3)"
+  },
+  {
+    "id": "f9abae04-3712-4136-b350-fa17d034a2a7",
+    "timestamp": "2025-12-06T09:17:28.690227",
+    "time": "2025-12-06 09:17:28",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 49.0)"
+  }
+]

@@ -82,45 +82,57 @@
         .profile-header {
             background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
             color: white;
-            padding: 40px;
+            padding: 50px 40px;
             text-align: center;
             position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
 
         .profile-avatar {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.25);
+            border: 5px solid rgba(255, 255, 255, 0.4);
+            margin: 0 auto 25px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
+            font-size: 56px;
             color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .profile-avatar:hover {
+            transform: scale(1.05);
         }
 
         .profile-name {
-            font-size: 32px;
-            margin-bottom: 10px;
+            font-size: 36px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .profile-role {
-            font-size: 18px;
-            opacity: 0.9;
-            margin-bottom: 5px;
+            font-size: 20px;
+            opacity: 0.95;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .profile-status {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(46, 204, 113, 0.2);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 10px;
+            gap: 10px;
+            background: rgba(46, 204, 113, 0.25);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            font-weight: 500;
         }
 
         .status-dot {
@@ -144,36 +156,52 @@
 
         .profile-sections {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 30px;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .profile-section {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
             border-radius: 15px;
-            padding: 25px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
         }
 
         .section-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
         }
 
         .section-title i {
             color: #3498db;
+            font-size: 22px;
         }
 
         .info-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 15px 0;
             border-bottom: 1px solid #e0e0e0;
+            transition: background 0.2s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(52, 152, 219, 0.05);
+            margin: 0 -10px;
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 8px;
         }
 
         .info-item:last-child {
@@ -181,16 +209,23 @@
         }
 
         .info-label {
-            font-weight: 500;
-            color: #666;
+            font-weight: 600;
+            color: #555;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        .info-label i {
+            color: #3498db;
+            width: 20px;
         }
 
         .info-value {
-            color: #333;
+            color: #2c3e50;
             font-weight: 600;
+            font-size: 15px;
         }
 
         /* Activity Section */
@@ -251,85 +286,28 @@
             color: #999;
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 24px;
-        }
-
-        .stat-icon.detections {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-        }
-
-        .stat-icon.uptime {
-            background: linear-gradient(135deg, #27ae60, #229954);
-            color: white;
-        }
-
-        .stat-icon.alerts {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-        }
-
-        .stat-icon.recordings {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-
         /* Action Buttons */
         .action-buttons {
             display: flex;
             gap: 15px;
-            margin-top: 30px;
+            margin-top: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 14px 28px;
             border: none;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             text-decoration: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .btn-primary {
@@ -339,34 +317,32 @@
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
         }
 
         .btn-secondary {
-            background: #95a5a6;
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
             color: white;
         }
 
         .btn-secondary:hover {
-            background: #7f8c8d;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(149, 165, 166, 0.4);
         }
 
         .btn-danger {
-            background: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
         }
 
         .btn-danger:hover {
-            background: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.4);
         }
 
         /* Responsive Design */
         @media (max-width: 768px) {
             .profile-sections {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-grid {
                 grid-template-columns: 1fr;
             }
 
@@ -379,7 +355,21 @@
             }
 
             .profile-body {
-                padding: 20px;
+                padding: 25px;
+            }
+
+            .profile-header {
+                padding: 35px 25px;
+            }
+
+            .profile-avatar {
+                width: 110px;
+                height: 110px;
+                font-size: 44px;
+            }
+
+            .profile-name {
+                font-size: 28px;
             }
         }
 
@@ -396,6 +386,156 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .modal-footer {
+            padding: 20px 25px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8f9fa;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-group input:invalid {
+            border-color: #e74c3c;
         }
     </style>
 </head>
@@ -422,38 +562,6 @@
     </div>
 
     <div class="main-container">
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon detections">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <div class="stat-value" id="detectionCount">0</div>
-                <div class="stat-label">Total Detections</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon uptime">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div class="stat-value" id="uptime">0h</div>
-                <div class="stat-label">System Uptime</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon alerts">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div class="stat-value" id="alertCount">0</div>
-                <div class="stat-label">Active Alerts</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon recordings">
-                    <i class="fas fa-video"></i>
-                </div>
-                <div class="stat-value" id="recordingCount">0</div>
-                <div class="stat-label">Recordings</div>
-            </div>
-        </div>
-
         <!-- Profile Card -->
         <div class="profile-card">
             <div class="profile-header">
@@ -491,13 +599,6 @@
                         </div>
                         <div class="info-item">
                             <span class="info-label">
-                                <i class="fas fa-calendar"></i>
-                                Member Since
-                            </span>
-                            <span class="info-value" id="memberSince">2024-01-01</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">
                                 <i class="fas fa-key"></i>
                                 Access Level
                             </span>
@@ -505,41 +606,6 @@
                         </div>
                     </div>
 
-                    <div class="profile-section">
-                        <div class="section-title">
-                            <i class="fas fa-history"></i>
-                            Recent Activity
-                        </div>
-                        <div class="activity-list" id="activityList">
-                            <div class="activity-item">
-                                <div class="activity-icon login">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="activity-title">Logged in successfully</div>
-                                    <div class="activity-time">Just now</div>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon security">
-                                    <i class="fas fa-shield-alt"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="activity-title">Security scan completed</div>
-                                    <div class="activity-time">2 hours ago</div>
-                                </div>
-                            </div>
-                            <div class="activity-item">
-                                <div class="activity-icon system">
-                                    <i class="fas fa-cog"></i>
-                                </div>
-                                <div class="activity-content">
-                                    <div class="activity-title">System settings updated</div>
-                                    <div class="activity-time">1 day ago</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="action-buttons">
@@ -586,7 +652,6 @@
                     document.getElementById('userName').textContent = user.username.charAt(0).toUpperCase() + user.username.slice(1);
                     document.getElementById('username').textContent = user.username;
                     document.getElementById('email').textContent = user.email;
-                    document.getElementById('memberSince').textContent = user.member_since;
                     
                     // Store in session for consistency
                     sessionStorage.setItem('username', user.username);
@@ -609,58 +674,12 @@
                 document.getElementById('username').textContent = username;
                 document.getElementById('email').textContent = email;
                 
-                const memberSince = localStorage.getItem('memberSince') || '2024-01-01';
-                document.getElementById('memberSince').textContent = memberSince;
-                
                 if (role === 'Administrator') {
                     document.getElementById('generateCodeBtn').style.display = 'inline-flex';
                 }
             }
         }
 
-        // Load system stats
-        async function loadSystemStats() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-                
-                // Update detection count
-                if (data.log && Array.isArray(data.log)) {
-                    document.getElementById('detectionCount').textContent = data.log.length;
-                }
-                
-                // Update alert count (active alerts in last 24 hours)
-                const alertCount = data.log ? data.log.filter(event => {
-                    const eventTime = new Date(event.time);
-                    const now = new Date();
-                    const hoursDiff = (now - eventTime) / (1000 * 60 * 60);
-                    return hoursDiff <= 24;
-                }).length : 0;
-                document.getElementById('alertCount').textContent = alertCount;
-                
-                // Update uptime (mock data for now)
-                const uptimeHours = Math.floor(Math.random() * 72) + 1;
-                document.getElementById('uptime').textContent = uptimeHours + 'h';
-                
-            } catch (error) {
-                console.error('Error loading system stats:', error);
-            }
-        }
-
-        // Load recordings count
-        async function loadRecordingsCount() {
-            try {
-                const response = await fetch('/api/recordings');
-                const data = await response.json();
-                
-                if (data.statistics) {
-                    document.getElementById('recordingCount').textContent = data.statistics.total_count || 0;
-                }
-            } catch (error) {
-                console.error('Error loading recordings count:', error);
-                document.getElementById('recordingCount').textContent = '0';
-            }
-        }
 
         // Logout function
         function logout() {
@@ -737,10 +756,18 @@
                                 <label for="editEmail">Email Address</label>
                                 <input type="email" id="editEmail" value="${currentEmail}" placeholder="Enter your email">
                             </div>
+                            <div class="form-group">
+                                <label for="editEmailOtp">OTP Verification</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="text" id="editEmailOtp" placeholder="Enter OTP" style="flex: 1;">
+                                    <button class="btn btn-secondary" id="sendOtpBtn" onclick="sendProfileOtp()">Send OTP</button>
+                                </div>
+                                <small style="color: #666;">We will send a 6-digit OTP to the new email. Enter it here to confirm.</small>
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button class="btn btn-secondary" onclick="closeModal('editProfileModal')">Cancel</button>
-                            <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
+                            <button class="btn btn-primary" id="verifySaveBtn" onclick="verifyAndUpdateProfile()">Verify &amp; Save</button>
                         </div>
                     </div>
                 </div>
@@ -788,25 +815,75 @@
         function closeModal(modalId) {
             const modal = document.getElementById(modalId);
             if (modal) {
-                modal.remove();
+                modal.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    modal.remove();
+                }, 300);
             }
         }
 
-        async function updateProfile() {
+        // Close modal on overlay click
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal-overlay')) {
+                closeModal(e.target.id);
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal-overlay');
+                modals.forEach(modal => closeModal(modal.id));
+            }
+        });
+
+        // Verify OTP then update profile
+        async function verifyAndUpdateProfile() {
             const newEmail = document.getElementById('editEmail').value.trim();
+            const otp = document.getElementById('editEmailOtp') ? document.getElementById('editEmailOtp').value.trim() : '';
+            const saveBtn = document.getElementById('verifySaveBtn');
+            const originalText = saveBtn.innerHTML;
             
             if (!newEmail) {
-                alert('Please enter an email address');
+                showNotification('Please enter an email address', 'error');
+                return;
+            }
+            
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(newEmail)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+
+            if (!otp) {
+                showNotification('Please enter the OTP sent to your new email', 'error');
                 return;
             }
             
             try {
+                // First verify OTP
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                const verifyRes = await fetch('/api/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: newEmail, otp })
+                });
+                const verifyData = await verifyRes.json();
+                if (!verifyData.success) {
+                    showNotification(verifyData.message || 'OTP verification failed', 'error');
+                    return;
+                }
+                
+                // Now update profile email
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
                 const response = await fetch('/api/update-profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email: newEmail })
+                    body: JSON.stringify({ email: newEmail, otp })
                 });
                 
                 const data = await response.json();
@@ -817,14 +894,59 @@
                     sessionStorage.setItem('email', newEmail);
                     localStorage.setItem('email', newEmail);
                     
-                    alert('Profile updated successfully!');
+                    showNotification('Profile updated successfully!', 'success');
                     closeModal('editProfileModal');
                 } else {
-                    alert('Failed to update profile: ' + data.message);
+                    showNotification('Failed to update profile: ' + (data.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error updating profile:', error);
-                alert('Network error. Please try again.');
+                showNotification('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
+        }
+
+        // Send OTP for new email
+        async function sendProfileOtp() {
+            const emailInput = document.getElementById('editEmail');
+            const otpBtn = document.getElementById('sendOtpBtn');
+            if (!emailInput || !otpBtn) return;
+            
+            const email = emailInput.value.trim();
+            if (!email) {
+                showNotification('Please enter an email address first', 'error');
+                return;
+            }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            otpBtn.disabled = true;
+            const originalText = otpBtn.innerHTML;
+            otpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+            
+            try {
+                const res = await fetch('/api/request-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification('OTP sent to your new email. Please check your inbox.', 'success');
+                } else {
+                    showNotification(data.message || 'Failed to send OTP', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('Network error while sending OTP', 'error');
+            } finally {
+                otpBtn.disabled = false;
+                otpBtn.innerHTML = originalText;
             }
         }
 
@@ -832,21 +954,27 @@
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const saveBtn = document.querySelector('#changePasswordModal .btn-primary');
+            const originalText = saveBtn.innerHTML;
             
             if (!currentPassword || !newPassword || !confirmPassword) {
-                alert('Please fill in all fields');
+                showNotification('Please fill in all fields', 'error');
                 return;
             }
             
             if (newPassword !== confirmPassword) {
-                alert('New passwords do not match');
+                showNotification('New passwords do not match', 'error');
                 return;
             }
             
             if (newPassword.length < 6) {
-                alert('Password must be at least 6 characters long');
+                showNotification('Password must be at least 6 characters long', 'error');
                 return;
             }
+            
+            // Show loading state
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
             
             try {
                 const response = await fetch('/api/change-password', {
@@ -864,57 +992,35 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('Password changed successfully!');
+                    showNotification('Password changed successfully!', 'success');
                     closeModal('changePasswordModal');
+                    
+                    // Clear password fields
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
                 } else {
-                    alert('Failed to change password: ' + data.message);
+                    showNotification('Failed to change password: ' + (data.message || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error changing password:', error);
-                alert('Network error. Please try again.');
+                showNotification('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
             }
         }
 
-        // Initialize page
+        // Initialize page - Optimized for faster loading
         document.addEventListener('DOMContentLoaded', function() {
-            // User is authenticated (backend already verified)
+            // Load user data immediately (critical)
             loadUserData();
-            loadSystemStats();
-            loadRecordingsCount();
             
-            // Refresh stats every 30 seconds
-            setInterval(() => {
-                loadSystemStats();
-                loadRecordingsCount();
-            }, 30000);
+            // Removed system stats and recordings count loading to improve page load speed
+            // These are not needed on the profile page
         });
 
-        // Add activity logging
-        function logActivity(type, title) {
-            const activityList = document.getElementById('activityList');
-            const newActivity = document.createElement('div');
-            newActivity.className = 'activity-item';
-            
-            const iconClass = type === 'login' ? 'login' : type === 'security' ? 'security' : 'system';
-            const icon = type === 'login' ? 'fa-sign-in-alt' : type === 'security' ? 'fa-shield-alt' : 'fa-cog';
-            
-            newActivity.innerHTML = `
-                <div class="activity-icon ${iconClass}">
-                    <i class="fas ${icon}"></i>
-                </div>
-                <div class="activity-content">
-                    <div class="activity-title">${title}</div>
-                    <div class="activity-time">Just now</div>
-                </div>
-            `;
-            
-            activityList.insertBefore(newActivity, activityList.firstChild);
-            
-            // Keep only last 5 activities
-            while (activityList.children.length > 5) {
-                activityList.removeChild(activityList.lastChild);
-            }
-        }
     </script>
 </body>
 </html>
+

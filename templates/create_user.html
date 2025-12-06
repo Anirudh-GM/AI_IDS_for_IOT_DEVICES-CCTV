@@ -157,6 +157,13 @@
             background: #f0f9f4;
         }
 
+        .otp-input {
+            letter-spacing: 5px;
+            font-size: 1.2rem;
+            text-align: center;
+            font-weight: bold;
+        }
+
         .password-strength {
             margin-top: 8px;
             height: 4px;
@@ -219,6 +226,17 @@
             background: #7f8c8d;
         }
 
+        .btn-outline-secondary {
+            background: transparent;
+            color: #6c757d;
+            border: 2px solid #6c757d;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            color: white;
+        }
+
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
@@ -275,6 +293,16 @@
             flex: 1;
         }
 
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
         .back-to-login {
             text-align: center;
             margin-top: 20px;
@@ -312,6 +340,14 @@
             margin-bottom: 3px;
         }
 
+        .otp-group {
+            display: none;
+        }
+
+        .otp-group.show {
+            display: block;
+        }
+
         @media (max-width: 480px) {
             .create-user-container {
                 margin: 20px;
@@ -339,9 +375,9 @@
         <div class="create-user-header">
             <h1>
                 <i class="fas fa-user-shield"></i>
-                Create Administrator
+                Create User
             </h1>
-            <p>AI-IDS Administrator Registration with Admin Code Verification</p>
+            <p>AI-IDS User Registration with Admin Code and Email Verification</p>
         </div>
 
         <div class="create-user-body">
@@ -349,6 +385,7 @@
                 <div class="step active" id="step1">1</div>
                 <div class="step" id="step2">2</div>
                 <div class="step" id="step3">3</div>
+                <div class="step" id="step4">4</div>
             </div>
 
             <div class="message error-message" id="errorMessage"></div>
@@ -375,7 +412,7 @@
 
             <!-- Step 2: User Information -->
             <div class="form-section" id="step2Section">
-                <h3 style="margin-bottom: 20px; color: #2c3e50;">Step 2: Administrator Information</h3>
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">Step 2: User Information</h3>
                 
                 <div class="form-group">
                     <label for="username">Username *</label>
@@ -385,12 +422,25 @@
 
                 <div class="form-group">
                     <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" placeholder="user@example.com" required>
+                    <div class="input-group">
+                        <input type="email" id="email" name="email" placeholder="user@example.com" required>
+                        <button type="button" class="btn btn-outline-secondary" id="requestOtpBtn" style="width: auto; padding: 12px 20px;">
+                            <i class="fas fa-envelope"></i>
+                            Send OTP
+                        </button>
+                    </div>
                 </div>
 
-                <div class="info-message" style="margin-bottom: 20px;">
-                    <i class="fas fa-info-circle"></i>
-                    All users are created as administrators with full system access.
+                <div class="form-group otp-group" id="otpGroup">
+                    <label for="otp">Email Verification Code *</label>
+                    <div class="input-group">
+                        <input type="text" id="otp" name="otp" class="otp-input" placeholder="Enter 6-digit code" maxlength="6">
+                        <button type="button" class="btn btn-outline-secondary" id="verifyOtpBtn" style="width: auto; padding: 12px 20px;">
+                            <i class="fas fa-check"></i>
+                            Verify OTP
+                        </button>
+                    </div>
+                    <small style="color: #666;">Check your email for the verification code</small>
                 </div>
 
                 <div class="button-group">
@@ -398,7 +448,7 @@
                         <i class="fas fa-arrow-left"></i>
                         Back
                     </button>
-                    <button class="btn btn-primary" id="proceedToStep3">
+                    <button class="btn btn-primary" id="proceedToStep3" disabled>
                         <i class="fas fa-arrow-right"></i>
                         Next
                     </button>
@@ -436,10 +486,23 @@
                         <i class="fas fa-arrow-left"></i>
                         Back
                     </button>
-                    <button class="btn btn-success" id="createUserBtn">
+                    <button class="btn btn-success" id="createUserBtn" disabled>
                         <i class="fas fa-user-plus"></i>
                         Create User
                     </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div class="form-section" id="step4Section">
+                <div style="text-align: center; padding: 20px;">
+                    <i class="fas fa-check-circle" style="font-size: 64px; color: #27ae60; margin-bottom: 20px;"></i>
+                    <h3 style="color: #27ae60; margin-bottom: 15px;">User Created Successfully!</h3>
+                    <p style="color: #666; margin-bottom: 30px;">The new user account has been created and can now access the system.</p>
+                    <a href="/login" class="btn btn-primary" style="width: auto; padding: 14px 40px;">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Go to Login
+                    </a>
                 </div>
             </div>
 
@@ -455,6 +518,8 @@
     <script>
         let currentStep = 1;
         let verifiedAdminCode = '';
+        let otpRequested = false;
+        let otpVerified = false;
 
         // Step navigation
         function showStep(step) {
@@ -530,12 +595,16 @@
                     setTimeout(() => showStep(2), 1000);
                 } else {
                     showMessage(data.message || 'Invalid admin code', 'error');
-                    // Clear the code inputs
-                    document.querySelectorAll('.code-digit').forEach(input => {
-                        input.value = '';
-                        input.classList.remove('filled');
-                    });
-                    document.getElementById('code1').focus();
+                    if (data.locked) {
+                        startCountdown(3, this); // 3 seconds lockout
+                    } else {
+                        // Clear the code inputs
+                        document.querySelectorAll('.code-digit').forEach(input => {
+                            input.value = '';
+                            input.classList.remove('filled');
+                        });
+                        document.getElementById('code1').focus();
+                    }
                 }
             } catch (error) {
                 console.error('Error verifying admin code:', error);
@@ -544,6 +613,144 @@
                 this.classList.remove('loading');
                 this.innerHTML = '<i class="fas fa-shield-alt"></i> Verify Admin Code';
                 this.disabled = false;
+            }
+        });
+
+        // Request OTP
+        document.getElementById('requestOtpBtn').addEventListener('click', async function() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showMessage('Please enter your email address first.', 'error');
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+
+            this.classList.add('loading');
+            this.innerHTML = '<i class="fas fa-spinner"></i> Sending...';
+            this.disabled = true;
+
+            try {
+                const response = await fetch('/api/request-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage('OTP sent to your email! (Check console for testing)', 'success');
+                    document.getElementById('otpGroup').classList.add('show');
+                    otpRequested = true;
+                    startOtpCountdown(300); // 5 minutes
+                    document.getElementById('otp').focus();
+                } else {
+                    showMessage(data.message || 'Failed to send OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Error requesting OTP:', error);
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                this.classList.remove('loading');
+                this.innerHTML = '<i class="fas fa-envelope"></i> Send OTP';
+                this.disabled = false;
+            }
+        });
+
+        // Verify OTP button
+        document.getElementById('verifyOtpBtn').addEventListener('click', async function() {
+            const otp = document.getElementById('otp').value.trim();
+            
+            if (otp.length !== 6) {
+                showMessage('Please enter the 6-digit OTP code.', 'error');
+                return;
+            }
+
+            this.classList.add('loading');
+            this.innerHTML = '<i class="fas fa-spinner"></i> Verifying...';
+            this.disabled = true;
+
+            await verifyOTPWithServer(otp);
+
+            this.classList.remove('loading');
+            this.innerHTML = '<i class="fas fa-check"></i> Verify OTP';
+            this.disabled = false;
+        });
+
+        // OTP input validation (removed auto-verification)
+        document.getElementById('otp').addEventListener('input', function() {
+            const otp = this.value.trim();
+            if (otp.length === 6) {
+                // Enable verify button but don't auto-verify
+                document.getElementById('verifyOtpBtn').disabled = false;
+            } else {
+                otpVerified = false;
+                document.getElementById('verifyOtpBtn').disabled = true;
+                checkStep2Validity();
+            }
+        });
+
+        // Check Step 2 validity
+        function checkStep2Validity() {
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const otp = document.getElementById('otp').value.trim();
+            
+            if (username && email && otp.length === 6 && otpRequested && otpVerified) {
+                document.getElementById('proceedToStep3').disabled = false;
+            } else {
+                document.getElementById('proceedToStep3').disabled = true;
+            }
+        }
+
+        // Verify OTP with server
+        async function verifyOTPWithServer(otp) {
+            const email = document.getElementById('email').value.trim();
+            
+            try {
+                const response = await fetch('/api/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email, otp: otp })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    otpVerified = true;
+                    showMessage('OTP verified successfully!', 'success');
+                    checkStep2Validity();
+                } else {
+                    otpVerified = false;
+                    showMessage(data.message || 'Invalid OTP', 'error');
+                    checkStep2Validity();
+                }
+            } catch (error) {
+                console.error('Error verifying OTP:', error);
+                otpVerified = false;
+                showMessage('Network error. Please try again.', 'error');
+                checkStep2Validity();
+            }
+        }
+
+        // Email input change
+        document.getElementById('email').addEventListener('input', function() {
+            // Reset OTP verification if email changes
+            if (otpRequested) {
+                otpRequested = false;
+                otpVerified = false;
+                document.getElementById('otpGroup').classList.remove('show');
+                document.getElementById('otp').value = '';
+                document.getElementById('proceedToStep3').disabled = true;
             }
         });
 
@@ -572,6 +779,11 @@
                 return;
             }
 
+            if (!otpVerified) {
+                showMessage('Please verify your email with the OTP.', 'error');
+                return;
+            }
+
             showStep(3);
         });
 
@@ -597,12 +809,33 @@
             }
         });
 
+        // Password confirmation check
+        document.getElementById('password').addEventListener('input', function() {
+            checkStep3Validity();
+        });
+
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            checkStep3Validity();
+        });
+
+        function checkStep3Validity() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password && confirmPassword && password === confirmPassword && password.length >= 6) {
+                document.getElementById('createUserBtn').disabled = false;
+            } else {
+                document.getElementById('createUserBtn').disabled = true;
+            }
+        }
+
         // Create user
         document.getElementById('createUserBtn').addEventListener('click', async function() {
             const username = document.getElementById('username').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+            const otp = document.getElementById('otp').value.trim();
 
             if (password !== confirmPassword) {
                 showMessage('Passwords do not match.', 'error');
@@ -615,7 +848,7 @@
             }
 
             this.classList.add('loading');
-            this.innerHTML = '<i class="fas fa-spinner"></i> Creating Administrator...';
+            this.innerHTML = '<i class="fas fa-spinner"></i> Creating User...';
             this.disabled = true;
 
             try {
@@ -628,26 +861,23 @@
                         username: username,
                         email: email,
                         password: password,
-                        admin_code: verifiedAdminCode
+                        otp: otp
                     })
                 });
 
                 const data = await response.json();
 
                 if (data.success) {
-                    showMessage('Administrator created successfully! Redirecting to login...', 'success');
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
+                    showStep(4);
                 } else {
-                    showMessage(data.message || 'Failed to create administrator', 'error');
+                    showMessage(data.message || 'Failed to create user', 'error');
                 }
             } catch (error) {
                 console.error('Error creating user:', error);
                 showMessage('Network error. Please try again.', 'error');
             } finally {
                 this.classList.remove('loading');
-                this.innerHTML = '<i class="fas fa-user-plus"></i> Create Administrator';
+                this.innerHTML = '<i class="fas fa-user-plus"></i> Create User';
                 this.disabled = false;
             }
         });
@@ -661,7 +891,7 @@
             showStep(2);
         });
 
-        // Message display
+        // Helper functions
         function showMessage(message, type) {
             const messageEl = document.getElementById(`${type}Message`);
             messageEl.textContent = message;
@@ -680,8 +910,46 @@
             }, 5000);
         }
 
+        function startCountdown(seconds, button) {
+            let remaining = seconds;
+            button.innerHTML = `Please wait ${remaining}s`;
+            button.disabled = true;
+            
+            const countdown = setInterval(() => {
+                remaining--;
+                button.textContent = `Please wait ${remaining}s`;
+                
+                if (remaining <= 0) {
+                    clearInterval(countdown);
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-shield-alt"></i> Verify Admin Code';
+                }
+            }, 1000);
+        }
+
+        function startOtpCountdown(seconds) {
+            let remaining = seconds;
+            const otpBtn = document.getElementById('requestOtpBtn');
+            otpBtn.disabled = true;
+            
+            const countdown = setInterval(() => {
+                const minutes = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                otpBtn.innerHTML = `Resend OTP (${minutes}:${secs < 10 ? '0' : ''}${secs})`;
+                
+                remaining--;
+                
+                if (remaining < 0) {
+                    clearInterval(countdown);
+                    otpBtn.disabled = false;
+                    otpBtn.innerHTML = '<i class="fas fa-envelope"></i> Send OTP';
+                }
+            }, 1000);
+        }
+
         // Initialize
         document.getElementById('code1').focus();
+        document.getElementById('verifyOtpBtn').disabled = true;
     </script>
 </body>
 </html>

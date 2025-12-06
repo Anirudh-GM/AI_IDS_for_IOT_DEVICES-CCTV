@@ -38,7 +38,6 @@
   <script>
     document.addEventListener('keydown', (e) => {
       if (e.key === 'a' || e.key === 'A') toggleManual();
-      if (e.key === 'i' || e.key === 'I') injectAttack();
     });
 
     async function startDetection(){
@@ -56,11 +55,6 @@
       document.getElementById('status').textContent = 'Manual Attack: ' + (j.manual ? 'ON' : 'OFF');
       addLog('Manual attack toggled: ' + (j.manual ? 'ON' : 'OFF'));
     }
-    async function injectAttack(){
-      const r = await fetch('/inject', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({duration:8})});
-      const j = await r.json();
-      addLog('Injected attack for ' + j.duration + 's');
-    }
 
     function addLog(line){
       const inner = document.getElementById('logInner');
@@ -72,7 +66,6 @@
         const r = await fetch('/get_status'); const j = await r.json();
         document.getElementById('status').textContent = j.running ? 'Status: Running' : 'Status: Stopped';
         if (j.manual_attack) document.getElementById('status').textContent += ' | Manual=ON';
-        if (j.inject_attack) document.getElementById('status').textContent += ' | Inject=ON';
 
         if (j.intrusion_detected){
           document.getElementById('alert').textContent = '⚠️ '+ (j.attack_type || 'Intrusion') + (j.device ? ' on '+j.device : '');
