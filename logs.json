@@ -46,5 +46,1918 @@
     "time": "2025-12-06 09:17:28",
     "event_type": "OBSTRUCTION_STARTED",
     "reason": "Camera obstruction detected: Camera partially covered (brightness: 49.0)"
+  },
+  {
+    "id": "a01771d9-3185-480c-a2a3-48b4b7321be4",
+    "timestamp": "2025-12-06T11:02:26.524511",
+    "time": "2025-12-06 11:02:26",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 3.6)"
+  },
+  {
+    "id": "3c58ff1b-2284-452f-8279-6c0990779592",
+    "timestamp": "2025-12-06T11:02:31.529012",
+    "time": "2025-12-06 11:02:31",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "82d09b15-4648-48f5-95b7-1234e03c7e3b",
+    "timestamp": "2025-12-06T11:02:52.464861",
+    "time": "2025-12-06 11:02:52",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 26 seconds: Camera obstructed (brightness: 5.9)"
+  },
+  {
+    "id": "dc680f17-60d3-461b-a130-a63780642980",
+    "timestamp": "2025-12-06T11:05:33.342332",
+    "time": "2025-12-06 11:05:33",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "6afc021c-e87f-4d7f-8621-dd5775053b58",
+    "timestamp": "2025-12-06T11:08:57.179356",
+    "time": "2025-12-06 11:08:57",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 127.0.0.1",
+    "client_ip": "127.0.0.1"
+  },
+  {
+    "id": "00a6ec9e-8ea9-4b60-89ae-3f13a8b2461b",
+    "timestamp": "2025-12-06T11:10:15.574092",
+    "time": "2025-12-06 11:10:15",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 11:08:57 - 11:10:15 (78.3s)",
+    "session_data": {
+      "session_id": "20251206_110857",
+      "start_time": "11:08:57",
+      "end_time": "11:10:15",
+      "duration": 78.31458759307861,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "2c4c69ef-e709-4618-a9f1-bebc75661e25",
+    "timestamp": "2025-12-06T11:10:31.756771",
+    "time": "2025-12-06 11:10:31",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "87048a0b-e78b-4219-8766-fe82d1c8576a",
+    "timestamp": "2025-12-06T11:16:19.359939",
+    "time": "2025-12-06 11:16:19",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 48.5)"
+  },
+  {
+    "id": "db660325-e26c-4b04-8417-1b3cc44f985b",
+    "timestamp": "2025-12-06T11:16:19.599078",
+    "time": "2025-12-06 11:16:19",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 31.4)"
+  },
+  {
+    "id": "6accafc5-f4d8-437a-8afb-2573b9c08230",
+    "timestamp": "2025-12-06T11:16:24.351967",
+    "time": "2025-12-06 11:16:24",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 11:16:19 - 11:16:24 (4.8s)",
+    "session_data": {
+      "session_id": "20251206_111619",
+      "start_time": "11:16:19",
+      "end_time": "11:16:24",
+      "duration": 4.753315687179565,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "7181deec-c3b9-4284-b376-144c0bc5c624",
+    "timestamp": "2025-12-06T11:16:24.671295",
+    "time": "2025-12-06 11:16:24",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.0)"
+  },
+  {
+    "id": "4b2c6d9e-95c0-406c-84ff-8577104e449a",
+    "timestamp": "2025-12-06T11:18:58.564660",
+    "time": "2025-12-06 11:18:58",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 2.6)"
+  },
+  {
+    "id": "3f6b5361-2546-4139-80d3-6252d9110125",
+    "timestamp": "2025-12-06T11:18:59.619646",
+    "time": "2025-12-06 11:18:59",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 3.4)"
+  },
+  {
+    "id": "9bf6c834-b269-4a09-91cf-6a0656974500",
+    "timestamp": "2025-12-06T11:19:00.607217",
+    "time": "2025-12-06 11:19:00",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 7.5)"
+  },
+  {
+    "id": "090e2b5b-14e8-4e29-8c89-39531c4821b3",
+    "timestamp": "2025-12-06T11:19:02.911035",
+    "time": "2025-12-06 11:19:02",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 11:19:00 - 11:19:02 (2.3s)",
+    "session_data": {
+      "session_id": "20251206_111900",
+      "start_time": "11:19:00",
+      "end_time": "11:19:02",
+      "duration": 2.304307460784912,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "e513915c-1432-4354-a91a-9937015cb4de",
+    "timestamp": "2025-12-06T11:19:03.090011",
+    "time": "2025-12-06 11:19:03",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 2.3)"
+  },
+  {
+    "id": "ea6618e2-baec-40ab-8f7e-f27f89aa3bc6",
+    "timestamp": "2025-12-06T11:19:52.268921",
+    "time": "2025-12-06 11:19:52",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "33e6c6f1-a1a0-43e8-bfa8-461f3d2a96c3",
+    "timestamp": "2025-12-06T11:23:04.598026",
+    "time": "2025-12-06 11:23:04",
+    "event_type": "USER_CREATED",
+    "reason": "New user account created: admin",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "8a754c76-9874-4d99-ab2c-c15bd8faee3e",
+    "timestamp": "2025-12-06T11:23:21.591341",
+    "time": "2025-12-06 11:23:21",
+    "event_type": "LOGIN",
+    "reason": "User admin logged in",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "5fcf7016-e62f-472a-9ea9-d92e271901ce",
+    "timestamp": "2025-12-06T11:24:53.327552",
+    "time": "2025-12-06 11:24:53",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 3.1)"
+  },
+  {
+    "id": "76a78d68-23c1-4ee8-b869-9232d1240246",
+    "timestamp": "2025-12-06T11:24:58.337284",
+    "time": "2025-12-06 11:24:58",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "67bec8df-651c-4461-9466-2762f2885126",
+    "timestamp": "2025-12-06T11:25:32.772236",
+    "time": "2025-12-06 11:25:32",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 39 seconds: Camera covered (low variance: 4.8)"
+  },
+  {
+    "id": "db7b5545-2410-48b4-baa3-5993958bc3f3",
+    "timestamp": "2025-12-06T11:25:38.284487",
+    "time": "2025-12-06 11:25:38",
+    "event_type": "DOS_FLOOD",
+    "reason": "DoS flood detected: 66.5 req/s from 127.0.0.1",
+    "client_ip": "127.0.0.1"
+  },
+  {
+    "id": "c103e21c-24b4-46f6-92cc-1ed00059a533",
+    "timestamp": "2025-12-06T11:26:08.657211",
+    "time": "2025-12-06 11:26:08",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 11:24:53 - 11:26:08 (75.3s)",
+    "session_data": {
+      "session_id": "20251206_112453",
+      "start_time": "11:24:53",
+      "end_time": "11:26:08",
+      "duration": 75.33013367652893,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "8bab21ce-50f5-4ee6-bd80-d24045e4e254",
+    "timestamp": "2025-12-06T11:26:52.588617",
+    "time": "2025-12-06 11:26:52",
+    "event_type": "RECOVERY_COMPLETE",
+    "reason": "System recovered from DOS_FLOOD attack"
+  },
+  {
+    "id": "66ebc1fd-7d98-41cf-adc0-17038c42c182",
+    "timestamp": "2025-12-06T11:30:05.409794",
+    "time": "2025-12-06 11:30:05",
+    "event_type": "MANUAL_ATTACK_TRIGGER",
+    "reason": "Manual attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "104be79b-5b13-4e5a-81f0-bdb73cbe8d77",
+    "timestamp": "2025-12-06T11:30:14.408833",
+    "time": "2025-12-06 11:30:14",
+    "event_type": "MANUAL_ATTACK_SESSION",
+    "reason": "Manual attack: 11:30:05 - 11:30:14 (9.0s)",
+    "username": "admin",
+    "session_data": {
+      "session_id": "20251206_113005",
+      "start_time": "11:30:05",
+      "end_time": "11:30:14",
+      "duration": 8.988099336624146,
+      "attack_type": "Manual",
+      "reason": "Manual attack triggered"
+    }
+  },
+  {
+    "id": "527a6292-7c49-424a-b1e3-887582e03b14",
+    "timestamp": "2025-12-06T11:31:30.495027",
+    "time": "2025-12-06 11:31:30",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "a1599f97-1382-485a-960c-c6c3414362a3",
+    "timestamp": "2025-12-06T11:31:30.509572",
+    "time": "2025-12-06 11:31:30",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "admin"
+  },
+  {
+    "id": "f18f891a-d596-456c-a9e9-4813c1f56238",
+    "timestamp": "2025-12-06T11:31:40.549902",
+    "time": "2025-12-06 11:31:40",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 11:31:30 - 11:31:40 (10.0s)",
+    "username": "admin",
+    "session_data": {
+      "session_id": "20251206_113130",
+      "start_time": "11:31:30",
+      "end_time": "11:31:40",
+      "duration": 10.040805101394653,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "12af587f-d13a-408c-af2f-d1bc8f9d90af",
+    "timestamp": "2025-12-06T11:31:45.521990",
+    "time": "2025-12-06 11:31:45",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "a1741211-59f2-40d5-a808-92c8c66ca41b",
+    "timestamp": "2025-12-06T11:33:16.139949",
+    "time": "2025-12-06 11:33:16",
+    "event_type": "LOGIN_FAILED",
+    "reason": "Failed login attempt for Sukham (Attempt 1)",
+    "client_ip": "10.109.135.15",
+    "username": "Sukham"
+  },
+  {
+    "id": "2f249214-0f5a-4b7e-a565-b7943719126d",
+    "timestamp": "2025-12-06T11:33:17.220003",
+    "time": "2025-12-06 11:33:17",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 11:31:50 - 11:33:17 (86.5s)",
+    "session_data": {
+      "session_id": "20251206_113150",
+      "start_time": "11:31:50",
+      "end_time": "11:33:17",
+      "duration": 86.46687340736389,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "b42fca06-21c0-4e16-9ff1-36f798bf6006",
+    "timestamp": "2025-12-06T11:43:31.448693",
+    "time": "2025-12-06 11:43:31",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 47.9)"
+  },
+  {
+    "id": "7c1a0c9b-a813-436d-941d-ee31ccf7726a",
+    "timestamp": "2025-12-06T11:43:36.531610",
+    "time": "2025-12-06 11:43:36",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "6b17764b-b3ed-48e2-8568-d82ccf144974",
+    "timestamp": "2025-12-06T11:44:05.865143",
+    "time": "2025-12-06 11:44:05",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 34 seconds: Camera covered (low variance: 12.1)"
+  },
+  {
+    "id": "f979135a-d23e-4e97-bf98-a8e8ba938a32",
+    "timestamp": "2025-12-06T11:44:40.071886",
+    "time": "2025-12-06 11:44:40",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 11:43:31 - 11:44:40 (68.6s)",
+    "session_data": {
+      "session_id": "20251206_114331",
+      "start_time": "11:43:31",
+      "end_time": "11:44:40",
+      "duration": 68.62349390983582,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "69c6a69e-7191-4390-a613-71a9b6570fd9",
+    "timestamp": "2025-12-06T11:47:00.420079",
+    "time": "2025-12-06 11:47:00",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "02918ca8-2d11-4bc0-b421-b2a0d1128ee1",
+    "timestamp": "2025-12-06T11:47:00.428297",
+    "time": "2025-12-06 11:47:00",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "admin"
+  },
+  {
+    "id": "c647fafc-4cbc-4bc5-bd6b-8fa48c8fc71c",
+    "timestamp": "2025-12-06T11:47:23.680971",
+    "time": "2025-12-06 11:47:23",
+    "event_type": "LOGIN_FAILED",
+    "reason": "Failed login attempt for Admin (Attempt 2)",
+    "client_ip": "10.109.135.15",
+    "username": "Admin"
+  },
+  {
+    "id": "a35ae728-1040-4ca9-81a0-cab1707ddb07",
+    "timestamp": "2025-12-06T11:47:31.718137",
+    "time": "2025-12-06 11:47:31",
+    "event_type": "LOGIN",
+    "reason": "User admin logged in",
+    "client_ip": "10.109.135.15",
+    "username": "admin"
+  },
+  {
+    "id": "25c2a858-61bd-43cc-80ac-e8b708c9c185",
+    "timestamp": "2025-12-06T11:49:10.315342",
+    "time": "2025-12-06 11:49:10",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 11:47:00 - 11:49:10 (129.9s)",
+    "username": "admin",
+    "session_data": {
+      "session_id": "20251206_114700",
+      "start_time": "11:47:00",
+      "end_time": "11:49:10",
+      "duration": 129.88738679885864,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "443d9f8b-c477-4f91-a76c-ea6e316eeb50",
+    "timestamp": "2025-12-06T11:49:14.854088",
+    "time": "2025-12-06 11:49:14",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "admin"
+  },
+  {
+    "id": "8c91327d-1451-448a-a889-bcc867688841",
+    "timestamp": "2025-12-06T11:53:06.243551",
+    "time": "2025-12-06 11:53:06",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "admin"
+  },
+  {
+    "id": "db18a8c5-bd1f-44a8-ba1d-acf3d6ce8504",
+    "timestamp": "2025-12-06T11:53:26.863572",
+    "time": "2025-12-06 11:53:26",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "a040d34c-2609-437d-93b5-d07f7b7498d1",
+    "timestamp": "2025-12-06T11:55:12.146822",
+    "time": "2025-12-06 11:55:12",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "9620e886-5015-4f76-9abb-5263aac41d28",
+    "timestamp": "2025-12-06T11:55:12.150096",
+    "time": "2025-12-06 11:55:12",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "f1fc7d21-ce70-4318-832a-7be079cde8b5",
+    "timestamp": "2025-12-06T11:55:47.060371",
+    "time": "2025-12-06 11:55:47",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 11:55:12 - 11:55:47 (34.9s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_115512",
+      "start_time": "11:55:12",
+      "end_time": "11:55:47",
+      "duration": 34.91063570976257,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "d3575821-bb33-4ef1-ad68-049c1db4f3e8",
+    "timestamp": "2025-12-06T11:55:52.474529",
+    "time": "2025-12-06 11:55:52",
+    "event_type": "BRUTE_FORCE_ATTEMPT",
+    "reason": "Excessive control requests from 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "c45f3985-aae8-45b7-bd44-76700b684e39",
+    "timestamp": "2025-12-06T11:55:57.422547",
+    "time": "2025-12-06 11:55:57",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 39.4)"
+  },
+  {
+    "id": "7aa367fd-bc67-43d4-af90-576c7f72727f",
+    "timestamp": "2025-12-06T11:56:02.465585",
+    "time": "2025-12-06 11:56:02",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "21e2a37b-478b-4da3-84d5-06607bb593a0",
+    "timestamp": "2025-12-06T11:56:03.826535",
+    "time": "2025-12-06 11:56:03",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "0e7fb4e8-c93f-41ee-a814-b25d70f05bc0",
+    "timestamp": "2025-12-06T11:56:07.042514",
+    "time": "2025-12-06 11:56:07",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "d95711a5-3eab-4cb9-a4d8-348197f9005b",
+    "timestamp": "2025-12-06T11:57:48.280874",
+    "time": "2025-12-06 11:57:48",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "ba4363a4-2fe9-4556-8898-90816f43a637",
+    "timestamp": "2025-12-06T12:00:04.482340",
+    "time": "2025-12-06 12:00:04",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 46.1)"
+  },
+  {
+    "id": "5a5abb15-1e74-4275-a985-a735e75c52b1",
+    "timestamp": "2025-12-06T12:00:05.040517",
+    "time": "2025-12-06 12:00:05",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 9.1)"
+  },
+  {
+    "id": "e0df7234-bae1-423d-9181-6be84efd1508",
+    "timestamp": "2025-12-06T12:00:08.479079",
+    "time": "2025-12-06 12:00:08",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 39.6)"
+  },
+  {
+    "id": "097ab19d-df65-4d35-bd04-1bcf2408b790",
+    "timestamp": "2025-12-06T12:00:09.943000",
+    "time": "2025-12-06 12:00:09",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:00:08 - 12:00:09 (1.5s)",
+    "session_data": {
+      "session_id": "20251206_120008",
+      "start_time": "12:00:08",
+      "end_time": "12:00:09",
+      "duration": 1.4652082920074463,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "e5e6d23c-0abc-4ab2-bb67-6d9ade04a515",
+    "timestamp": "2025-12-06T12:00:28.253004",
+    "time": "2025-12-06 12:00:28",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 13.5)"
+  },
+  {
+    "id": "b153d052-1cb7-4f5b-b1c7-7194e11f07d9",
+    "timestamp": "2025-12-06T12:00:29.412362",
+    "time": "2025-12-06 12:00:29",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 6.9)"
+  },
+  {
+    "id": "fe4fcddc-8bb6-433c-b0e1-03f6c48db69d",
+    "timestamp": "2025-12-06T12:00:30.280032",
+    "time": "2025-12-06 12:00:30",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 6.5)"
+  },
+  {
+    "id": "11bffc42-5d0d-46df-9649-7d412f30da92",
+    "timestamp": "2025-12-06T12:00:30.710871",
+    "time": "2025-12-06 12:00:30",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 11.7)"
+  },
+  {
+    "id": "cef3e6f8-163c-4ff6-a8aa-371575bda3dc",
+    "timestamp": "2025-12-06T12:00:31.024108",
+    "time": "2025-12-06 12:00:31",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 12.0)"
+  },
+  {
+    "id": "ad538b30-a397-49f7-bd16-219870413c7c",
+    "timestamp": "2025-12-06T12:00:31.891046",
+    "time": "2025-12-06 12:00:31",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.9)"
+  },
+  {
+    "id": "19d08c50-0ef8-4222-9ffc-22711b2ae8e3",
+    "timestamp": "2025-12-06T12:00:32.815152",
+    "time": "2025-12-06 12:00:32",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 12.3)"
+  },
+  {
+    "id": "8beaf51a-c0af-4aea-885e-ee5120fb84a1",
+    "timestamp": "2025-12-06T12:00:34.584329",
+    "time": "2025-12-06 12:00:34",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:00:32 - 12:00:34 (1.8s)",
+    "session_data": {
+      "session_id": "20251206_120032",
+      "start_time": "12:00:32",
+      "end_time": "12:00:34",
+      "duration": 1.7695434093475342,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "fc309c36-1ddc-4cff-9177-632d7f6a8ae7",
+    "timestamp": "2025-12-06T12:00:34.819793",
+    "time": "2025-12-06 12:00:34",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 10.6)"
+  },
+  {
+    "id": "14de6184-a5c3-47a2-be91-426636fbde22",
+    "timestamp": "2025-12-06T12:00:35.683932",
+    "time": "2025-12-06 12:00:35",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.3)"
+  },
+  {
+    "id": "1df263a9-03bd-42cf-aa49-045183e05ce7",
+    "timestamp": "2025-12-06T12:00:36.845762",
+    "time": "2025-12-06 12:00:36",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 10.2)"
+  },
+  {
+    "id": "de983b5a-0313-42e5-b929-31d57d0b1a57",
+    "timestamp": "2025-12-06T12:00:37.509138",
+    "time": "2025-12-06 12:00:37",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 7.6)"
+  },
+  {
+    "id": "82f6b845-53ea-4f01-b735-a7713b26688b",
+    "timestamp": "2025-12-06T12:00:37.849083",
+    "time": "2025-12-06 12:00:37",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 12.0)"
+  },
+  {
+    "id": "3decbe3c-3078-4c04-ae41-90086ece3f62",
+    "timestamp": "2025-12-06T12:00:40.062524",
+    "time": "2025-12-06 12:00:40",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 9.9)"
+  },
+  {
+    "id": "0d796cb5-8549-4630-abf7-d3b6f7377e2d",
+    "timestamp": "2025-12-06T12:09:25.667503",
+    "time": "2025-12-06 12:09:25",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "8cc0336c-0ed9-4e4f-b033-d63fa095772a",
+    "timestamp": "2025-12-06T12:10:14.483547",
+    "time": "2025-12-06 12:10:14",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 40.1)"
+  },
+  {
+    "id": "62e2f9c2-7f10-415b-b697-f887db003d84",
+    "timestamp": "2025-12-06T12:10:14.936723",
+    "time": "2025-12-06 12:10:14",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 42.0)"
+  },
+  {
+    "id": "28ec2b9b-1afe-4fb4-a634-8d98e0bec1e7",
+    "timestamp": "2025-12-06T12:10:16.202273",
+    "time": "2025-12-06 12:10:16",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 9.0)"
+  },
+  {
+    "id": "3b64a8b6-8ce6-407e-b3c0-f2bf509be25f",
+    "timestamp": "2025-12-06T12:10:17.461215",
+    "time": "2025-12-06 12:10:17",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 11.7)"
+  },
+  {
+    "id": "4f409a1b-177f-4cec-be94-3e452039df13",
+    "timestamp": "2025-12-06T12:10:17.875694",
+    "time": "2025-12-06 12:10:17",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 10.8)"
+  },
+  {
+    "id": "32c25a58-8562-44cf-a446-bf22064bfbee",
+    "timestamp": "2025-12-06T12:10:19.092071",
+    "time": "2025-12-06 12:10:19",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 12.3)"
+  },
+  {
+    "id": "edabd977-c53d-4ad0-bb36-9019f4cda5a3",
+    "timestamp": "2025-12-06T12:10:24.128696",
+    "time": "2025-12-06 12:10:24",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "27b2d5f5-b673-4c5f-ad9c-d271ddfd11f8",
+    "timestamp": "2025-12-06T12:10:52.436501",
+    "time": "2025-12-06 12:10:52",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 33 seconds: Camera covered (low variance: 8.1)"
+  },
+  {
+    "id": "e9b33c26-3976-4893-b45c-8861c7ae5823",
+    "timestamp": "2025-12-06T12:11:25.038020",
+    "time": "2025-12-06 12:11:25",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:10:19 - 12:11:25 (65.9s)",
+    "session_data": {
+      "session_id": "20251206_121019",
+      "start_time": "12:10:19",
+      "end_time": "12:11:25",
+      "duration": 65.94643783569336,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "aea5e91d-3faf-4c42-b650-8be62dc7b35b",
+    "timestamp": "2025-12-06T12:11:44.070780",
+    "time": "2025-12-06 12:11:44",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "89f44fed-3887-476b-a10e-41777c9610e0",
+    "timestamp": "2025-12-06T12:14:41.201864",
+    "time": "2025-12-06 12:14:41",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 41.3)"
+  },
+  {
+    "id": "8fec8d2e-90c2-42f9-bc75-672352e32a84",
+    "timestamp": "2025-12-06T12:14:42.672118",
+    "time": "2025-12-06 12:14:42",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:14:41 - 12:14:42 (1.5s)",
+    "session_data": {
+      "session_id": "20251206_121441",
+      "start_time": "12:14:41",
+      "end_time": "12:14:42",
+      "duration": 1.470576286315918,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "f9a00acb-c8ed-4383-b0f8-4118d7faa052",
+    "timestamp": "2025-12-06T12:14:43.316836",
+    "time": "2025-12-06 12:14:43",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.8)"
+  },
+  {
+    "id": "afc3fb8a-e0d0-4b60-99e0-bd6c8d19e6c0",
+    "timestamp": "2025-12-06T12:14:43.702267",
+    "time": "2025-12-06 12:14:43",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 12.2)"
+  },
+  {
+    "id": "e8371969-c122-4378-9034-bbffe2ae7973",
+    "timestamp": "2025-12-06T12:14:46.158361",
+    "time": "2025-12-06 12:14:46",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:14:43 - 12:14:46 (2.5s)",
+    "session_data": {
+      "session_id": "20251206_121443",
+      "start_time": "12:14:43",
+      "end_time": "12:14:46",
+      "duration": 2.456739664077759,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "67918f27-8367-4a52-a7fa-d86f3deb2f8f",
+    "timestamp": "2025-12-06T12:14:46.211924",
+    "time": "2025-12-06 12:14:46",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.3)"
+  },
+  {
+    "id": "61e3c736-d40f-46b1-994a-7c7ebf0ce02f",
+    "timestamp": "2025-12-06T12:14:48.148803",
+    "time": "2025-12-06 12:14:48",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:14:46 - 12:14:48 (1.9s)",
+    "session_data": {
+      "session_id": "20251206_121446",
+      "start_time": "12:14:46",
+      "end_time": "12:14:48",
+      "duration": 1.9374988079071045,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "55d17807-ed93-48b7-9f03-fad57ab74cc6",
+    "timestamp": "2025-12-06T12:14:50.959852",
+    "time": "2025-12-06 12:14:50",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.9)"
+  },
+  {
+    "id": "b456b843-3d30-43db-a99f-d3c4fe929e5f",
+    "timestamp": "2025-12-06T12:14:55.717620",
+    "time": "2025-12-06 12:14:55",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 4.9)"
+  },
+  {
+    "id": "76a938d7-5d6d-42f0-83f2-fabd89c6b7fa",
+    "timestamp": "2025-12-06T12:15:00.740886",
+    "time": "2025-12-06 12:15:00",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "555d9f6b-cab5-453d-9f49-2bba4d3994fe",
+    "timestamp": "2025-12-06T12:15:12.061514",
+    "time": "2025-12-06 12:15:12",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "3ca2c54e-3228-499e-9385-f0b06e194fe0",
+    "timestamp": "2025-12-06T12:15:19.666031",
+    "time": "2025-12-06 12:15:19",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "99b36b19-1551-4bf8-bc98-60fd45461ac7",
+    "timestamp": "2025-12-06T12:15:46.483488",
+    "time": "2025-12-06 12:15:46",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:14:55 - 12:15:46 (50.8s)",
+    "session_data": {
+      "session_id": "20251206_121455",
+      "start_time": "12:14:55",
+      "end_time": "12:15:46",
+      "duration": 50.76630759239197,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "c7b76e37-fb3b-42e5-8d99-50431099dea2",
+    "timestamp": "2025-12-06T12:15:46.494629",
+    "time": "2025-12-06 12:15:46",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:15:19 - 12:15:46 (26.8s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_121519",
+      "start_time": "12:15:19",
+      "end_time": "12:15:46",
+      "duration": 26.830324411392212,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "4b35ec46-db1f-4b1d-8ffc-b957cb498bec",
+    "timestamp": "2025-12-06T12:15:59.039705",
+    "time": "2025-12-06 12:15:59",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "056d57e0-5024-4fe1-bc2a-1c9770d08210",
+    "timestamp": "2025-12-06T12:16:28.525809",
+    "time": "2025-12-06 12:16:28",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "admin"
+  },
+  {
+    "id": "3b243c88-81b2-422a-8046-c29f7390db85",
+    "timestamp": "2025-12-06T12:17:09.021883",
+    "time": "2025-12-06 12:17:09",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:16:02 - 12:17:09 (66.1s)",
+    "session_data": {
+      "session_id": "20251206_121602",
+      "start_time": "12:16:02",
+      "end_time": "12:17:09",
+      "duration": 66.10855555534363,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "14b036cf-cd81-46c0-aa79-704b77010361",
+    "timestamp": "2025-12-06T12:17:20.678198",
+    "time": "2025-12-06 12:17:20",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 13.2)"
+  },
+  {
+    "id": "f7367e1e-27a0-4745-bd9f-e80758e41baa",
+    "timestamp": "2025-12-06T12:17:25.699905",
+    "time": "2025-12-06 12:17:25",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "15e0c1d7-9958-4147-8101-15842871fcc6",
+    "timestamp": "2025-12-06T12:17:35.795117",
+    "time": "2025-12-06 12:17:35",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 15 seconds: Camera covered (low variance: 5.4)"
+  },
+  {
+    "id": "0518f69f-2ddc-4711-a951-bce15bdb318c",
+    "timestamp": "2025-12-06T12:17:46.377903",
+    "time": "2025-12-06 12:17:46",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:17:20 - 12:17:46 (25.7s)",
+    "session_data": {
+      "session_id": "20251206_121720",
+      "start_time": "12:17:20",
+      "end_time": "12:17:46",
+      "duration": 25.70032286643982,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "f9c109cd-21b7-4984-926a-d3d91d4fd536",
+    "timestamp": "2025-12-06T12:18:36.261286",
+    "time": "2025-12-06 12:18:36",
+    "event_type": "USER_CREATED",
+    "reason": "New user account created: sukham",
+    "client_ip": "10.109.135.15",
+    "username": "sukham"
+  },
+  {
+    "id": "24bb77ad-7d26-4001-9338-81370d621926",
+    "timestamp": "2025-12-06T12:18:41.898540",
+    "time": "2025-12-06 12:18:41",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 41.5)"
+  },
+  {
+    "id": "1ec47d06-debe-4718-b78b-be126c1470cd",
+    "timestamp": "2025-12-06T12:18:42.681511",
+    "time": "2025-12-06 12:18:42",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 9.6)"
+  },
+  {
+    "id": "a647c64e-4e0c-4975-bdcb-b3b93fddb12e",
+    "timestamp": "2025-12-06T12:18:52.942534",
+    "time": "2025-12-06 12:18:52",
+    "event_type": "LOGIN",
+    "reason": "User sukham logged in",
+    "client_ip": "10.109.135.15",
+    "username": "sukham"
+  },
+  {
+    "id": "2d6c78c0-4a7a-4395-9721-980aa1b1f21d",
+    "timestamp": "2025-12-06T12:21:09.462358",
+    "time": "2025-12-06 12:21:09",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 47.9)"
+  },
+  {
+    "id": "ee1472f4-e02b-467e-9031-b5210ac6e0b0",
+    "timestamp": "2025-12-06T12:21:10.758472",
+    "time": "2025-12-06 12:21:10",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 29.5)"
+  },
+  {
+    "id": "2f147271-d185-44a1-b8c5-db133d17a91d",
+    "timestamp": "2025-12-06T12:21:12.349885",
+    "time": "2025-12-06 12:21:12",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:21:10 - 12:21:12 (1.6s)",
+    "session_data": {
+      "session_id": "20251206_122110",
+      "start_time": "12:21:10",
+      "end_time": "12:21:12",
+      "duration": 1.5920391082763672,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "c5a3f603-bd66-43d9-a903-0ae1f6c1ba95",
+    "timestamp": "2025-12-06T12:21:12.419367",
+    "time": "2025-12-06 12:21:12",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 8.2)"
+  },
+  {
+    "id": "2add3e48-09fc-451d-96c1-9f7549ebad09",
+    "timestamp": "2025-12-06T12:21:25.439608",
+    "time": "2025-12-06 12:21:25",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 30.6)"
+  },
+  {
+    "id": "34d04545-5fe7-4db5-91d6-0a61a48dfbdc",
+    "timestamp": "2025-12-06T12:21:26.467048",
+    "time": "2025-12-06 12:21:26",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 8.8)"
+  },
+  {
+    "id": "bb908084-10a5-4d93-9126-c4a11ed34451",
+    "timestamp": "2025-12-06T12:21:26.929929",
+    "time": "2025-12-06 12:21:26",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 7.9)"
+  },
+  {
+    "id": "796f8249-707b-42c6-adaa-5ec1e1a33310",
+    "timestamp": "2025-12-06T12:21:32.045293",
+    "time": "2025-12-06 12:21:32",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "188d6a18-363c-4252-b998-534e869dcba5",
+    "timestamp": "2025-12-06T12:21:48.008203",
+    "time": "2025-12-06 12:21:48",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 21 seconds: Camera covered (low variance: 7.0)"
+  },
+  {
+    "id": "5ab13a65-cbee-485a-9a98-a4038942e08b",
+    "timestamp": "2025-12-06T12:22:04.047566",
+    "time": "2025-12-06 12:22:04",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:21:26 - 12:22:04 (37.1s)",
+    "session_data": {
+      "session_id": "20251206_122126",
+      "start_time": "12:21:26",
+      "end_time": "12:22:04",
+      "duration": 37.11816191673279,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "29ce4f29-9505-413d-b033-73831b0c813a",
+    "timestamp": "2025-12-06T12:22:49.324799",
+    "time": "2025-12-06 12:22:49",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.15",
+    "client_ip": "10.109.135.15",
+    "username": "sukham"
+  },
+  {
+    "id": "74de452d-94ff-4b34-9f69-897bd89b859c",
+    "timestamp": "2025-12-06T12:22:49.357551",
+    "time": "2025-12-06 12:22:49",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "sukham"
+  },
+  {
+    "id": "76f328a6-514b-4607-9412-15a51a3f137b",
+    "timestamp": "2025-12-06T12:22:57.445639",
+    "time": "2025-12-06 12:22:57",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.15",
+    "client_ip": "10.109.135.15",
+    "username": "sukham"
+  },
+  {
+    "id": "0354cf2d-5791-42b4-a6d3-486b34c0e7e1",
+    "timestamp": "2025-12-06T12:23:37.346678",
+    "time": "2025-12-06 12:23:37",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "sukham"
+  },
+  {
+    "id": "2431c724-26e4-4dd0-93c9-e0793c4451a9",
+    "timestamp": "2025-12-06T12:23:39.033754",
+    "time": "2025-12-06 12:23:39",
+    "event_type": "LOGOUT",
+    "reason": "User logged out"
+  },
+  {
+    "id": "2e59517d-15e1-4142-b53f-b0a00f33b2eb",
+    "timestamp": "2025-12-06T12:27:01.577515",
+    "time": "2025-12-06 12:27:01",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:22:49 - 12:27:01 (252.2s)",
+    "username": "sukham",
+    "session_data": {
+      "session_id": "20251206_122249",
+      "start_time": "12:22:49",
+      "end_time": "12:27:01",
+      "duration": 252.22060823440552,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "e5c83d26-81f4-4f03-8f18-112270ac5c3a",
+    "timestamp": "2025-12-06T12:27:03.316737",
+    "time": "2025-12-06 12:27:03",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "cda5416a-7655-4456-b81e-2f82154b8a91",
+    "timestamp": "2025-12-06T12:28:44.840233",
+    "time": "2025-12-06 12:28:44",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:27:21 - 12:28:44 (83.4s)",
+    "session_data": {
+      "session_id": "20251206_122721",
+      "start_time": "12:27:21",
+      "end_time": "12:28:44",
+      "duration": 83.42387008666992,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "6b0533f0-2219-44b3-a0c0-613649bbd645",
+    "timestamp": "2025-12-06T12:28:47.928965",
+    "time": "2025-12-06 12:28:47",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "15a1e2b4-9560-4f84-96cd-89c7a6405758",
+    "timestamp": "2025-12-06T12:29:50.356598",
+    "time": "2025-12-06 12:29:50",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "322d0c0f-94a2-47ea-b2d7-6a2e45b46e14",
+    "timestamp": "2025-12-06T12:29:50.361148",
+    "time": "2025-12-06 12:29:50",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "7e9615b7-9df1-4e39-892c-0f8ea6bfcff0",
+    "timestamp": "2025-12-06T12:30:28.505207",
+    "time": "2025-12-06 12:30:28",
+    "event_type": "BRUTE_FORCE_ATTEMPT",
+    "reason": "Excessive control requests from 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "49c1b147-9ae3-4df4-99ed-74c6c14bff68",
+    "timestamp": "2025-12-06T12:30:45.604485",
+    "time": "2025-12-06 12:30:45",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:29:50 - 12:30:45 (55.2s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_122950",
+      "start_time": "12:29:50",
+      "end_time": "12:30:45",
+      "duration": 55.24355936050415,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "fc402103-1738-41bf-85d5-d0179c728c3d",
+    "timestamp": "2025-12-06T12:34:05.149275",
+    "time": "2025-12-06 12:34:05",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 43.0)"
+  },
+  {
+    "id": "69ca2d82-c29e-4e2e-a82a-735f2c7263c1",
+    "timestamp": "2025-12-06T12:34:06.359370",
+    "time": "2025-12-06 12:34:06",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.6)"
+  },
+  {
+    "id": "fc6cc8ab-3967-482e-9db8-338a46fd4fe8",
+    "timestamp": "2025-12-06T12:34:11.412244",
+    "time": "2025-12-06 12:34:11",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "f22e03f0-d0e4-4000-b844-10a229173303",
+    "timestamp": "2025-12-06T12:34:27.179896",
+    "time": "2025-12-06 12:34:27",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 21 seconds: Camera covered (low variance: 6.3)"
+  },
+  {
+    "id": "0557999c-cc22-40eb-ace8-7bdbb5fbff55",
+    "timestamp": "2025-12-06T12:34:42.866479",
+    "time": "2025-12-06 12:34:42",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:34:06 - 12:34:42 (36.5s)",
+    "session_data": {
+      "session_id": "20251206_123406",
+      "start_time": "12:34:06",
+      "end_time": "12:34:42",
+      "duration": 36.50746965408325,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "744a7d54-fa9f-4c49-9a22-7988cf772ef5",
+    "timestamp": "2025-12-06T12:38:03.797257",
+    "time": "2025-12-06 12:38:03",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 49.9)"
+  },
+  {
+    "id": "5878c9a9-7929-411e-ab3d-c5baaecc83a7",
+    "timestamp": "2025-12-06T12:38:05.132921",
+    "time": "2025-12-06 12:38:05",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:38:03 - 12:38:05 (1.3s)",
+    "session_data": {
+      "session_id": "20251206_123803",
+      "start_time": "12:38:03",
+      "end_time": "12:38:05",
+      "duration": 1.3361396789550781,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "b6d6cedc-2be3-44af-bbfe-68eb5ffa7ce5",
+    "timestamp": "2025-12-06T12:38:12.289022",
+    "time": "2025-12-06 12:38:12",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 49.6)"
+  },
+  {
+    "id": "d2aa9d6d-78e9-4477-915d-0887a1272c2d",
+    "timestamp": "2025-12-06T12:38:21.500655",
+    "time": "2025-12-06 12:38:21",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "e0c2446e-03a4-4724-8fbe-3524be3351c5",
+    "timestamp": "2025-12-06T12:38:21.700775",
+    "time": "2025-12-06 12:38:21",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "4b2a98ce-6512-4179-914f-8201fd5e3497",
+    "timestamp": "2025-12-06T12:38:41.759161",
+    "time": "2025-12-06 12:38:41",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 12:38:21 - 12:38:41 (20.1s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_123821",
+      "start_time": "12:38:21",
+      "end_time": "12:38:41",
+      "duration": 20.05886459350586,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "d02d6633-7a55-45b8-a0a9-2afd61d21f5e",
+    "timestamp": "2025-12-06T12:40:04.949151",
+    "time": "2025-12-06 12:40:04",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 33.6)"
+  },
+  {
+    "id": "8177a871-8ad5-47ab-b856-b23f2d0e0c5c",
+    "timestamp": "2025-12-06T12:40:09.953784",
+    "time": "2025-12-06 12:40:09",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "4f75dade-a3ab-43a5-a2fa-1858b64e02c6",
+    "timestamp": "2025-12-06T12:40:37.333662",
+    "time": "2025-12-06 12:40:37",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 32 seconds: Camera obstructed (brightness: 5.9)"
+  },
+  {
+    "id": "d6c38097-d8ca-422e-a0a1-883bae9dc543",
+    "timestamp": "2025-12-06T12:40:53.328396",
+    "time": "2025-12-06 12:40:53",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:40:04 - 12:40:53 (48.4s)",
+    "session_data": {
+      "session_id": "20251206_124004",
+      "start_time": "12:40:04",
+      "end_time": "12:40:53",
+      "duration": 48.379626750946045,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "a234fa7d-ba92-401d-ac61-506d9d38caf2",
+    "timestamp": "2025-12-06T12:45:07.809877",
+    "time": "2025-12-06 12:45:07",
+    "event_type": "MANUAL_ATTACK_TRIGGER",
+    "reason": "Manual attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "78906315-7589-4c10-baae-664af99a1af1",
+    "timestamp": "2025-12-06T12:45:21.717669",
+    "time": "2025-12-06 12:45:21",
+    "event_type": "MANUAL_ATTACK_SESSION",
+    "reason": "Manual attack: 12:45:07 - 12:45:21 (13.8s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_124507",
+      "start_time": "12:45:07",
+      "end_time": "12:45:21",
+      "duration": 13.845452070236206,
+      "attack_type": "Manual",
+      "reason": "Manual attack triggered"
+    }
+  },
+  {
+    "id": "64fc1d83-6259-43e5-87ab-13c0dfb030d0",
+    "timestamp": "2025-12-06T12:57:11.763235",
+    "time": "2025-12-06 12:57:11",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 4.5)"
+  },
+  {
+    "id": "43c9ba6b-a273-4dbb-a178-1cb9489f0218",
+    "timestamp": "2025-12-06T12:57:14.943086",
+    "time": "2025-12-06 12:57:14",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:57:11 - 12:57:14 (3.2s)",
+    "session_data": {
+      "session_id": "20251206_125711",
+      "start_time": "12:57:11",
+      "end_time": "12:57:14",
+      "duration": 3.1802399158477783,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "a81eb890-77e9-4081-92b1-f1456047fe85",
+    "timestamp": "2025-12-06T12:57:21.241877",
+    "time": "2025-12-06 12:57:21",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 15.0)"
+  },
+  {
+    "id": "331e4416-a847-4717-b876-379929175fee",
+    "timestamp": "2025-12-06T12:57:22.177671",
+    "time": "2025-12-06 12:57:22",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.5)"
+  },
+  {
+    "id": "dd41685b-b8be-4d21-8a8c-ecd71f8d81ee",
+    "timestamp": "2025-12-06T12:57:23.647280",
+    "time": "2025-12-06 12:57:23",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:57:22 - 12:57:23 (1.5s)",
+    "session_data": {
+      "session_id": "20251206_125722",
+      "start_time": "12:57:22",
+      "end_time": "12:57:23",
+      "duration": 1.4699814319610596,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "2a1d40d1-bf07-4870-a846-9d119dc0d969",
+    "timestamp": "2025-12-06T12:57:25.329283",
+    "time": "2025-12-06 12:57:25",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 13.1)"
+  },
+  {
+    "id": "5b7ebccd-a020-43d9-bc09-8fc1cd727c70",
+    "timestamp": "2025-12-06T12:57:30.423303",
+    "time": "2025-12-06 12:57:30",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "3ffb057c-1d87-487d-85d5-1df9fc6f6e07",
+    "timestamp": "2025-12-06T12:58:00.895967",
+    "time": "2025-12-06 12:58:00",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 36 seconds: Camera covered (low variance: 5.5)"
+  },
+  {
+    "id": "a2a89e21-2ace-4ced-9ba2-1a926aaad38a",
+    "timestamp": "2025-12-06T12:58:33.622028",
+    "time": "2025-12-06 12:58:33",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 12:57:25 - 12:58:33 (68.3s)",
+    "session_data": {
+      "session_id": "20251206_125725",
+      "start_time": "12:57:25",
+      "end_time": "12:58:33",
+      "duration": 68.29320073127747,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "d3395b47-5942-4a47-9c2f-858c7729bae6",
+    "timestamp": "2025-12-06T13:01:27.859794",
+    "time": "2025-12-06 13:01:27",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 36.0)"
+  },
+  {
+    "id": "d6a6a388-4319-4eb5-9449-d0711b0705c9",
+    "timestamp": "2025-12-06T13:03:13.326964",
+    "time": "2025-12-06 13:03:13",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 48.8)"
+  },
+  {
+    "id": "30b8e673-5925-48c5-b70f-1aa3ca01811e",
+    "timestamp": "2025-12-06T13:03:15.357028",
+    "time": "2025-12-06 13:03:15",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 13:03:13 - 13:03:15 (2.0s)",
+    "session_data": {
+      "session_id": "20251206_130313",
+      "start_time": "13:03:13",
+      "end_time": "13:03:15",
+      "duration": 2.030383348464966,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "c6ed9bb1-ca51-464f-b3cb-961f7d1f3d9d",
+    "timestamp": "2025-12-06T13:04:26.061961",
+    "time": "2025-12-06 13:04:26",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "db21c1b9-0426-4685-ba2e-70bf7c7e36f9",
+    "timestamp": "2025-12-06T13:04:26.064223",
+    "time": "2025-12-06 13:04:26",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "7f9b3d04-2cb0-4e29-be4c-2f9b48acd757",
+    "timestamp": "2025-12-06T13:04:42.159828",
+    "time": "2025-12-06 13:04:42",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 13:04:26 - 13:04:42 (16.1s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_130426",
+      "start_time": "13:04:26",
+      "end_time": "13:04:42",
+      "duration": 16.095879793167114,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "296128cb-e303-4820-8107-9a0aae9b9d7b",
+    "timestamp": "2025-12-06T13:07:30.647714",
+    "time": "2025-12-06 13:07:30",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 24.7)"
+  },
+  {
+    "id": "223e2f05-555b-4aea-83dc-6ebd47f91329",
+    "timestamp": "2025-12-06T13:07:35.454222",
+    "time": "2025-12-06 13:07:35",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 13:07:30 - 13:07:35 (4.8s)",
+    "session_data": {
+      "session_id": "20251206_130730",
+      "start_time": "13:07:30",
+      "end_time": "13:07:35",
+      "duration": 4.807275056838989,
+      "reason": null,
+      "sound_alert": false,
+      "notification_sent": false
+    }
+  },
+  {
+    "id": "be3c3964-d370-4ba0-99ea-881238ca8439",
+    "timestamp": "2025-12-06T13:07:53.937359",
+    "time": "2025-12-06 13:07:53",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 40.5)"
+  },
+  {
+    "id": "157779b2-eda0-4191-8df4-3930fa7e0177",
+    "timestamp": "2025-12-06T13:07:54.495621",
+    "time": "2025-12-06 13:07:54",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 46.3)"
+  },
+  {
+    "id": "d609d16f-de58-44fb-ab42-a304572af547",
+    "timestamp": "2025-12-06T13:07:59.618778",
+    "time": "2025-12-06 13:07:59",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "b4b91abb-c0e4-4d42-9d26-496d2750abe3",
+    "timestamp": "2025-12-06T13:08:19.244817",
+    "time": "2025-12-06 13:08:19",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 25 seconds: Camera covered (low variance: 13.3)"
+  },
+  {
+    "id": "e78c4ba1-e94e-496b-8ef4-879b21bc715c",
+    "timestamp": "2025-12-06T13:09:05.395457",
+    "time": "2025-12-06 13:09:05",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 13:07:54 - 13:09:05 (70.9s)",
+    "session_data": {
+      "session_id": "20251206_130754",
+      "start_time": "13:07:54",
+      "end_time": "13:09:05",
+      "duration": 70.90029287338257,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "775e0088-de7e-4b03-9399-8af899f8549e",
+    "timestamp": "2025-12-06T13:15:47.646049",
+    "time": "2025-12-06 13:15:47",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 41.7)"
+  },
+  {
+    "id": "55fa5dfa-e79a-4845-a08a-6a46c8aac749",
+    "timestamp": "2025-12-06T13:15:48.050185",
+    "time": "2025-12-06 13:15:48",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera partially covered (brightness: 47.4)"
+  },
+  {
+    "id": "ece24c25-c518-4d53-a2ac-6a1686bdedc4",
+    "timestamp": "2025-12-06T13:15:50.483064",
+    "time": "2025-12-06 13:15:50",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 14.1)"
+  },
+  {
+    "id": "a8762bfc-550b-4504-b8b0-38db5cb18983",
+    "timestamp": "2025-12-06T13:15:51.105554",
+    "time": "2025-12-06 13:15:51",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 9.9)"
+  },
+  {
+    "id": "07db0f21-ff83-4fff-9ec7-87c0c689ec44",
+    "timestamp": "2025-12-06T13:15:52.335522",
+    "time": "2025-12-06 13:15:52",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera covered (low variance: 7.6)"
+  },
+  {
+    "id": "806cf023-5772-4657-b60b-9ec78f8499dd",
+    "timestamp": "2025-12-06T13:15:57.382516",
+    "time": "2025-12-06 13:15:57",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "f2d1b50a-cf04-4452-aeea-01ed0aa9edf6",
+    "timestamp": "2025-12-06T13:16:25.386199",
+    "time": "2025-12-06 13:16:25",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 33 seconds: Camera covered (low variance: 10.7)"
+  },
+  {
+    "id": "604cf899-6939-4a92-a4de-bdfebe98c525",
+    "timestamp": "2025-12-06T13:16:59.475085",
+    "time": "2025-12-06 13:16:59",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 13:15:52 - 13:16:59 (67.1s)",
+    "session_data": {
+      "session_id": "20251206_131552",
+      "start_time": "13:15:52",
+      "end_time": "13:16:59",
+      "duration": 67.14007043838501,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
+  },
+  {
+    "id": "69c31e47-f8f6-4bfc-8b1a-28e0a5bca7a6",
+    "timestamp": "2025-12-06T13:17:21.577852",
+    "time": "2025-12-06 13:17:21",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 10.109.135.75",
+    "client_ip": "10.109.135.75",
+    "username": "anirudh"
+  },
+  {
+    "id": "60c6b8b8-b3e9-4595-8a0a-17bdfe00717f",
+    "timestamp": "2025-12-06T13:17:21.586306",
+    "time": "2025-12-06 13:17:21",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "b70a819e-1065-4668-bbaa-8028e4345d28",
+    "timestamp": "2025-12-06T13:17:38.020990",
+    "time": "2025-12-06 13:17:38",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 13:17:21 - 13:17:38 (16.4s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_131721",
+      "start_time": "13:17:21",
+      "end_time": "13:17:38",
+      "duration": 16.434961080551147,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "75f255ab-3d77-48d9-88fc-e66e2e848e86",
+    "timestamp": "2025-12-06T13:51:30.890544",
+    "time": "2025-12-06 13:51:30",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "7a5baad7-fb5c-4de9-9cd8-c9df5aa3d7d0",
+    "timestamp": "2025-12-06T15:32:40.562541",
+    "time": "2025-12-06 15:32:40",
+    "event_type": "LOGIN_FAILED",
+    "reason": "Failed login attempt for anirudh (Attempt 1)",
+    "client_ip": "10.36.23.149",
+    "username": "anirudh"
+  },
+  {
+    "id": "4cbaea02-6b28-4b9e-a48b-8795957dd32a",
+    "timestamp": "2025-12-06T15:32:54.628260",
+    "time": "2025-12-06 15:32:54",
+    "event_type": "LOGIN_FAILED",
+    "reason": "Failed login attempt for Admin (Attempt 2)",
+    "client_ip": "10.36.23.149",
+    "username": "Admin"
+  },
+  {
+    "id": "2ef6b662-0aa8-4c2e-bfa1-39aa3d3a50b3",
+    "timestamp": "2025-12-06T15:36:11.840384",
+    "time": "2025-12-06 15:36:11",
+    "event_type": "USER_CREATED",
+    "reason": "New user account created: anirudh",
+    "client_ip": "10.36.23.149",
+    "username": "anirudh"
+  },
+  {
+    "id": "e287046e-bab1-4383-b6fc-d978f709ecd6",
+    "timestamp": "2025-12-06T15:36:20.832655",
+    "time": "2025-12-06 15:36:20",
+    "event_type": "LOGOUT",
+    "reason": "User logged out",
+    "username": "anirudh"
+  },
+  {
+    "id": "c6c6d666-72bd-4698-8ed6-f6090fc0808f",
+    "timestamp": "2025-12-06T15:36:27.673470",
+    "time": "2025-12-06 15:36:27",
+    "event_type": "LOGOUT",
+    "reason": "User logged out"
+  },
+  {
+    "id": "41dda867-80d5-4c53-a064-f64e5352de42",
+    "timestamp": "2025-12-06T15:36:35.146250",
+    "time": "2025-12-06 15:36:35",
+    "event_type": "LOGOUT",
+    "reason": "User logged out"
+  },
+  {
+    "id": "e8fd8544-733d-4235-93bc-1f9a77d38293",
+    "timestamp": "2025-12-06T15:37:09.588537",
+    "time": "2025-12-06 15:37:09",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "bfd0a587-3bef-4c4a-8836-f797026c52d9",
+    "timestamp": "2025-12-06T15:37:23.208443",
+    "time": "2025-12-06 15:37:23",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "10.36.23.149",
+    "username": "anirudh"
+  },
+  {
+    "id": "75748563-dc10-4058-bdb9-ca5c84669768",
+    "timestamp": "2025-12-06T15:39:48.890410",
+    "time": "2025-12-06 15:39:48",
+    "event_type": "MANUAL_ATTACK_TRIGGER",
+    "reason": "Manual attack triggered by 127.0.0.1",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "823a52e9-8cd4-4627-b875-d130d64c39c0",
+    "timestamp": "2025-12-06T15:39:52.339999",
+    "time": "2025-12-06 15:39:52",
+    "event_type": "MANUAL_ATTACK_SESSION",
+    "reason": "Manual attack: 15:39:48 - 15:39:52 (3.4s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_153948",
+      "start_time": "15:39:48",
+      "end_time": "15:39:52",
+      "duration": 3.4285054206848145,
+      "attack_type": "Manual",
+      "reason": "Manual attack triggered"
+    }
+  },
+  {
+    "id": "e8049912-b44e-4bfd-b5a0-876914c9ea53",
+    "timestamp": "2025-12-06T15:42:39.476707",
+    "time": "2025-12-06 15:42:39",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 127.0.0.1",
+    "client_ip": "127.0.0.1"
+  },
+  {
+    "id": "ee87cc15-904d-473f-94c7-dde2a2a877df",
+    "timestamp": "2025-12-06T15:43:48.446125",
+    "time": "2025-12-06 15:43:48",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 15:42:39 - 15:43:48 (69.0s)",
+    "session_data": {
+      "session_id": "20251206_154239",
+      "start_time": "15:42:39",
+      "end_time": "15:43:48",
+      "duration": 68.96019387245178,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "b7826bbb-86a3-44d1-ab21-6490b7348ccc",
+    "timestamp": "2025-12-06T15:43:49.409707",
+    "time": "2025-12-06 15:43:49",
+    "event_type": "SUSPICIOUS_ACTIVITY",
+    "reason": "Rapid control requests from 127.0.0.1",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "114fa238-1f3a-4fe8-9417-0d21985b2384",
+    "timestamp": "2025-12-06T15:44:05.152884",
+    "time": "2025-12-06 15:44:05",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack triggered by 127.0.0.1",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "975929c3-2caf-4211-951c-0a66b4f5cb70",
+    "timestamp": "2025-12-06T15:44:05.161044",
+    "time": "2025-12-06 15:44:05",
+    "event_type": "INJECT_ATTACK_TRIGGER",
+    "reason": "Inject attack started",
+    "username": "anirudh"
+  },
+  {
+    "id": "eda2c60e-1377-4c5d-9e4a-3ff51bb05182",
+    "timestamp": "2025-12-06T15:45:01.714906",
+    "time": "2025-12-06 15:45:01",
+    "event_type": "INJECT_ATTACK_SESSION",
+    "reason": "Inject attack: 15:44:05 - 15:45:01 (56.6s)",
+    "username": "anirudh",
+    "session_data": {
+      "session_id": "20251206_154405",
+      "start_time": "15:44:05",
+      "end_time": "15:45:01",
+      "duration": 56.55549931526184,
+      "attack_type": "Inject",
+      "reason": "Video injection attack detected"
+    }
+  },
+  {
+    "id": "edfd9015-6118-4ebd-a3e1-d73e16d5b373",
+    "timestamp": "2025-12-07T19:08:59.405185",
+    "time": "2025-12-07 19:08:59",
+    "event_type": "OBSTRUCTION_STARTED",
+    "reason": "Camera obstruction detected: Camera obstructed (brightness: 0.6)"
+  },
+  {
+    "id": "fb303ef4-9ff3-4afd-ae08-92d46ea55280",
+    "timestamp": "2025-12-07T19:09:04.421570",
+    "time": "2025-12-07 19:09:04",
+    "event_type": "SOUND_ALERT",
+    "reason": "Beep sound played - camera covered for 5 seconds"
+  },
+  {
+    "id": "08db31bb-31c7-4160-b6e8-ae001981b787",
+    "timestamp": "2025-12-07T19:09:39.812694",
+    "time": "2025-12-07 19:09:39",
+    "event_type": "OBSTRUCTION_DETECTED",
+    "reason": "Camera obstruction alert - covered for 40 seconds: Camera obstructed (brightness: 5.9)"
+  },
+  {
+    "id": "930bb6a9-cded-4940-b3a6-a9c70b3747d9",
+    "timestamp": "2025-12-07T19:10:18.833450",
+    "time": "2025-12-07 19:10:18",
+    "event_type": "LOGIN",
+    "reason": "User anirudh logged in",
+    "client_ip": "127.0.0.1",
+    "username": "anirudh"
+  },
+  {
+    "id": "48094ecd-217a-4fb9-8aef-af6222687087",
+    "timestamp": "2025-12-07T19:10:22.072170",
+    "time": "2025-12-07 19:10:22",
+    "event_type": "VIDEO_INJECTION",
+    "reason": "Repeated identical frames with zero motion detected (possible video injection)"
+  },
+  {
+    "id": "475e669a-9f7e-43ec-9994-31893eb34cfc",
+    "timestamp": "2025-12-07T19:10:40.214868",
+    "time": "2025-12-07 19:10:40",
+    "event_type": "OBSTRUCTION_SESSION",
+    "reason": "Camera obstruction: 19:08:59 - 19:10:40 (100.8s)",
+    "session_data": {
+      "session_id": "20251207_190859",
+      "start_time": "19:08:59",
+      "end_time": "19:10:40",
+      "duration": 100.80994367599487,
+      "reason": null,
+      "sound_alert": true,
+      "notification_sent": true
+    }
   }
 ]

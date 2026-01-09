@@ -1,5 +1,5 @@
 # app.py — Enhanced version with better error handling and features
-from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for, flash, send_from_directory, has_request_context
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for, flash, send_from_directory
 import cv2
 import numpy as np
 import time
@@ -18,40 +18,8 @@ import uuid
 from email.mime.text import MIMEText
 import smtplib
 import random
-from dotenv import load_dotenv
-
-# Set up logging first
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-# Video-based AI features disabled - focusing on network-based IDS only
-AI_ENABLED = False
-get_ai_engine = None
-
-# Import comprehensive attack detection
-try:
-    from attack_detection_module import get_attack_detector, get_network_attack_detector
-    ATTACK_DETECTION_ENABLED = True
-    logger.info("Attack Detection Module loaded successfully")
-except ImportError as e:
-    ATTACK_DETECTION_ENABLED = False
-    logger.warning(f"Attack Detection Module not available: {e}")
-    get_attack_detector = None
-    get_network_attack_detector = None
-
-# Import attack recovery module
-try:
-    from attack_recovery_module import get_recovery_manager
-    RECOVERY_ENABLED = True
-    logger.info("Attack Recovery Module loaded successfully")
-except ImportError as e:
-    RECOVERY_ENABLED = False
-    logger.warning(f"Attack Recovery Module not available: {e}")
-    get_recovery_manager = None
-
-# Load environment variables from .env file (explicitly use .env in current directory)
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(dotenv_path=env_path, override=True)
+from background_service import background_service, start_service, stop_service
+import atexit
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -59,18 +27,6 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# Import Network IDS Module (after app is created)
-try:
-    from network_ids_routes import network_ids_bp
-    from network_ids_module import get_network_ids
-    app.register_blueprint(network_ids_bp)
-    NETWORK_IDS_ENABLED = True
-    logger.info("Network IDS routes registered successfully")
-except ImportError as e:
-    NETWORK_IDS_ENABLED = False
-    logger.warning(f"Network IDS routes not available: {e}")
-    get_network_ids = None
 
 # Secret key for session management
 app.secret_key = os.getenv('SECRET_KEY', 'ai-ids-secret-key-change-in-production')
@@ -84,16 +40,17 @@ class Config:
     CAMERA_INDEX = 0
     FRAME_WIDTH = 640
     FRAME_HEIGHT = 480
-    FPS = 60  # Target FPS for video streaming (increased for faster response)
+    FPS = 20
     OBSTRUCTION_THRESHOLD = 0.85
     MOTION_THRESHOLD = 0.3
     
-    # Email Configuration (loaded from .env file)
+    # Email Configuration
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = os.getenv('GMAIL_EMAIL', '')  # Sender email from .env
-    MAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', '')  # App password from .env
+    MAIL_USERNAME = 'chaitanya030605@gmail.com'  # Sender email
+    MAIL_PASSWORD = 'wczwwvftitpmszti'           # App password (without spaces)
+    ALERT_EMAIL = ''    # Default recipient email
     
     # CCTV Recording Configuration
     RECORDINGS_DIR = "recordings"
@@ -215,8 +172,8 @@ def get_alert_email():
         if user_data.get('email'):
             return user_data['email']
     
-    # No email found
-    return None
+    # Final fallback to config (should never reach here with proper setup)
+    return Config.ALERT_EMAIL or Config.MAIL_USERNAME
 
 def generate_otp():
     """Generate a 6-digit OTP"""
@@ -241,99 +198,31 @@ def send_otp_email(email, otp):
         print(f"OTP: {otp}")
         print(f"{'='*50}\n")
         
-        # Require valid mail config
-        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
-            logger.error("Email sending failed: MAIL_USERNAME or MAIL_PASSWORD not configured")
-            return False
-
-        msg = MIMEText(f'Your OTP is: {otp}\n\nThis OTP is valid for 5 minutes.')
+        # For testing, skip email sending to make it faster
+        # Uncomment below lines if you want actual email sending
+        """
+        msg = MIMEText(f'Your OTP for user creation is: {otp}\n\nThis OTP is valid for 5 minutes.')
         msg['Subject'] = 'Your Verification Code'
         msg['From'] = Config.MAIL_USERNAME
         msg['To'] = email
         
-        with smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=10) as server:
+        with smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=3) as server:
             server.starttls()
             server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
             server.send_message(msg)
+        """
         return True
     except Exception as e:
         logger.error(f"Failed to send OTP email: {e}")
-        return False
-
-def load_logs_from_file():
-    """Load logs from persistent storage file"""
-    logs_file = "logs.json"
-    try:
-        if os.path.exists(logs_file):
-            with open(logs_file, 'r', encoding='utf-8') as f:
-                logs = json.load(f)
-                # Ensure logs is a list
-                if not isinstance(logs, list):
-                    logs = []
-                return logs
-        return []
-    except (json.JSONDecodeError, IOError) as e:
-        logger.error(f"Error loading logs from file: {e}")
-        return []
-
-def save_logs_to_file(logs):
-    """Save logs to persistent storage file"""
-    logs_file = "logs.json"
-    try:
-        # Ensure logs is a list
-        if not isinstance(logs, list):
-            logger.warning("Logs is not a list, converting...")
-            logs = list(logs) if logs else []
-        
-        # Remove duplicates by ID
-        seen_ids = set()
-        unique_logs = []
-        for log in logs:
-            log_id = log.get('id')
-            if log_id and log_id not in seen_ids:
-                seen_ids.add(log_id)
-                unique_logs.append(log)
-            elif not log_id:
-                # Keep logs without IDs (legacy support)
-                unique_logs.append(log)
-        
-        # Keep only last 10000 entries to prevent file from growing too large
-        logs_to_save = unique_logs[-10000:] if len(unique_logs) > 10000 else unique_logs
-        
-        # Sort by timestamp for consistency
-        logs_to_save.sort(key=lambda x: x.get('timestamp', x.get('time', '')), reverse=False)
-        
-        # Write to file with atomic operation (write to temp file first, then rename)
-        temp_file = logs_file + '.tmp'
-        with open(temp_file, 'w', encoding='utf-8') as f:
-            json.dump(logs_to_save, f, indent=2, ensure_ascii=False)
-        
-        # Atomic rename (works on Windows too)
-        if os.path.exists(logs_file):
-            os.replace(temp_file, logs_file)
-        else:
-            os.rename(temp_file, logs_file)
-        
-        logger.debug(f"Saved {len(logs_to_save)} logs to {logs_file}")
-    except IOError as e:
-        logger.error(f"Error saving logs to file: {e}", exc_info=True)
-        # Try to clean up temp file if it exists
-        try:
-            if os.path.exists(logs_file + '.tmp'):
-                os.remove(logs_file + '.tmp')
-        except:
-            pass
-    except Exception as e:
-        logger.error(f"Unexpected error saving logs: {e}", exc_info=True)
+        # Still return True so testing can continue even if email fails
+        print(f"Email sending failed, but OTP is: {otp}")
+        return True
 
 def log_event(event_type, reason, session_id=None, session_data=None, client_ip=None, username=None):
     """Log an event with timestamp and optional session data"""
     timestamp = datetime.now()
-    entry_id = str(uuid.uuid4())  # Generate unique ID for each log entry
     entry = {
-        "id": entry_id,
         "timestamp": timestamp.isoformat(),
-        "time": timestamp.strftime("%Y-%m-%d %H:%M:%S"),  # Human-readable time
         "event_type": event_type,
         "reason": reason
     }
@@ -341,10 +230,6 @@ def log_event(event_type, reason, session_id=None, session_data=None, client_ip=
     # Add client IP if provided
     if client_ip:
         entry["client_ip"] = client_ip
-    
-    # Add username if provided
-    if username:
-        entry["username"] = username
     
     # Add session data if provided
     if session_id:
@@ -360,33 +245,11 @@ def log_event(event_type, reason, session_id=None, session_data=None, client_ip=
         'ALERT', 
         'OBSTRUCTION_DETECTED', 
         'MANUAL_ATTACK_TRIGGER', 
-        'INJECT_ATTACK_TRIGGER',  # Immediate notification when attack starts
-        'INJECT_ATTACK_SESSION',  # Session summary after attack ends
+        'INJECT_ATTACK_SESSION',
         'MOTION_DETECTED',
         'INTRUSION_DETECTED',
         'SYSTEM_ALERT',
-        'SECURITY_ALERT',
-        # Network Attack Types
-        'DDOS',                    # DDoS Flood Attack
-        'DOS_FLOOD',               # DoS Flood Attack
-        'PORT_SCAN',               # Port Scan / Reconnaissance
-        'BRUTE_FORCE',             # Brute Force Attack
-        'BRUTE_FORCE_ATTEMPT',     # Brute Force Attempt
-        'UNAUTHORIZED_ACCESS',     # Unauthorized Access
-        'WEB_EXPLOIT',             # Web Exploit (SQL Injection, XSS, etc.)
-        'AI_NETWORK_ATTACK',       # AI-detected Network Attack
-        # CCTV Attack Types
-        'VIDEO_INJECTION',         # Video Injection Attack
-        'FRAME_FREEZE',            # Frame Freeze Attack
-        'MOTION_MASKING',          # Motion Masking Attack
-        'CABLE_CUTTING',           # Cable Cutting Attack
-        # Other Security Events
-        'SYSTEM_TAMPERING',        # System Tampering
-        'CONFIG_INJECTION',        # Configuration Injection
-        'CREDENTIAL_THEFT',        # Credential Theft Attempt
-        'EXPLOIT_ATTEMPT',         # Exploit Attempt
-        'RECONNAISSANCE',          # Reconnaissance Activity
-        'SUSPICIOUS_ACTIVITY'      # General Suspicious Activity
+        'SECURITY_ALERT'
     ]
     
     is_important_event = any(event in event_type for event in important_events)
@@ -414,46 +277,19 @@ def log_event(event_type, reason, session_id=None, session_data=None, client_ip=
             msg['Subject'] = subject
             msg['From'] = Config.MAIL_USERNAME
             
-            # Determine recipient email based on provided username or session
-            recipient_email = None
+            # Determine recipient email based on provided username or fallback
+            recipient_email = Config.ALERT_EMAIL
             if username:
                 users = load_users()
                 user_data = users.get(username)
                 if user_data and user_data.get('email'):
                     recipient_email = user_data['email']
-            elif has_request_context() and 'username' in session: # Fallback to session if available
-                try:
-                    current_session_username = session.get('username')
-                    users = load_users()
-                    user_data = users.get(current_session_username)
-                    if user_data and user_data.get('email'):
-                        recipient_email = user_data['email']
-                except RuntimeError:
-                    # Session not available in this context
-                    pass
-            
-            # If no specific user email found, try to send to admins for important security events
-            if not recipient_email and is_important_event:
+            elif 'username' in session: # Fallback to session if available
+                current_session_username = session.get('username')
                 users = load_users()
-                # Find first admin user with email
-                for user_name, user_data in users.items():
-                    user_role = user_data.get('role', '').lower()
-                    if (user_role == 'administrator' or user_role == 'admin') and user_data.get('email'):
-                        recipient_email = user_data['email']
-                        logger.info(f"No specific user email found, sending to admin: {user_name}")
-                        break
-                # If still no admin found, try any user with email
-                if not recipient_email:
-                    for user_name, user_data in users.items():
-                        if user_data.get('email'):
-                            recipient_email = user_data['email']
-                            logger.info(f"No admin email found, sending to user: {user_name}")
-                            break
-            
-            # Skip sending email if no recipient is found
-            if not recipient_email:
-                logger.warning(f"No recipient email found for event {event_type} - email not sent")
-                return entry
+                user_data = users.get(current_session_username)
+                if user_data and user_data.get('email'):
+                    recipient_email = user_data['email']
             
             msg['To'] = recipient_email
             
@@ -467,267 +303,12 @@ def log_event(event_type, reason, session_id=None, session_data=None, client_ip=
         except Exception as e:
             logger.error(f"Failed to send email alert: {str(e)}")
     
-    # Add to in-memory detection log (for quick access, keeps last 1000 events)
+    # Add to detection log (keeps last 100 events)
     detection_log.append(entry)
-    if len(detection_log) > 1000:
+    if len(detection_log) > 100:
         detection_log.pop(0)
     
-    # Save to persistent storage (with error handling and retry)
-    try:
-        all_logs = load_logs_from_file()
-        # Ensure all_logs is a list
-        if not isinstance(all_logs, list):
-            all_logs = []
-        # Check if entry already exists (by ID) to prevent duplicates
-        existing_ids = {log.get('id') for log in all_logs if log.get('id')}
-        if entry.get('id') not in existing_ids:
-            all_logs.append(entry)
-            # Keep only last 10000 entries to prevent file from growing too large
-            if len(all_logs) > 10000:
-                all_logs = all_logs[-10000:]
-            save_logs_to_file(all_logs)
-            logger.debug(f"Log saved: {entry.get('event_type')} - {entry.get('id')}")
-        else:
-            logger.debug(f"Log already exists, skipping: {entry.get('id')}")
-    except Exception as e:
-        logger.error(f"Error saving log to persistent storage: {e}", exc_info=True)
-        # Try to save at least to in-memory log even if file save fails
-    
     return entry
-
-# Network traffic feature extraction for AI analysis
-def extract_network_features(request, start_time=None):
-    """
-    Extract network traffic features from Flask request for AI analysis
-    Maps HTTP request properties to NSL-KDD-like features
-    """
-    if start_time is None:
-        start_time = time.time()
-    
-    # Calculate duration (request processing time)
-    duration = time.time() - start_time
-    
-    # Extract request properties
-    method = request.method
-    path = request.path
-    endpoint = path.split('/')[-1] if path else ''
-    
-    # Map HTTP method to protocol type (simplified)
-    protocol_map = {'GET': 0, 'POST': 1, 'PUT': 2, 'DELETE': 3, 'PATCH': 4}
-    protocol_type = protocol_map.get(method, 0)
-    
-    # Map endpoint to service type (simplified)
-    service_map = {
-        'login': 0, 'api': 1, 'status': 2, 'control': 3, 'video_feed': 4,
-        'dashboard': 5, 'profile': 6, 'static': 7, 'favicon': 8
-    }
-    service = 0
-    for key, val in service_map.items():
-        if key in path.lower():
-            service = val
-            break
-    
-    # Extract request size
-    content_length = request.content_length or 0
-    src_bytes = content_length  # Bytes sent by client
-    dst_bytes = len(str(request.get_data())) if request.get_data() else 0  # Bytes received
-    
-    # Extract headers and flags
-    connection = request.headers.get('Connection', '').lower()
-    flag = 1 if 'keep-alive' in connection else 0
-    
-    # Extract query parameters and payload
-    query_string = str(request.query_string) if request.query_string else ''
-    payload = str(request.get_data()) if request.get_data() else ''
-    
-    # Calculate features based on request patterns
-    num_failed_logins = 0  # Will be updated by login handler
-    logged_in = 1 if has_request_context() and 'username' in session else 0
-    is_guest_login = 1 if logged_in == 0 else 0
-    is_host_login = 1 if logged_in == 1 else 0
-    
-    # Count suspicious patterns in payload
-    suspicious_patterns = ['<script', 'union select', 'drop table', '../', 'exec(', 'eval(']
-    num_shells = sum(1 for pattern in suspicious_patterns if pattern.lower() in payload.lower())
-    num_access_files = 1 if '../' in path or '..' in path else 0
-    
-    # Request frequency features (simplified - would need history tracking)
-    count = 1  # Current request count
-    srv_count = 1  # Service count
-    
-    # Error rates (simplified)
-    serror_rate = 0.0
-    srv_serror_rate = 0.0
-    rerror_rate = 0.0
-    srv_rerror_rate = 0.0
-    
-    # Service rates (simplified)
-    same_srv_rate = 1.0
-    diff_srv_rate = 0.0
-    srv_diff_host_rate = 0.0
-    
-    # Host-based features (simplified)
-    dst_host_count = 1
-    dst_host_srv_count = 1
-    dst_host_same_srv_rate = 1.0
-    dst_host_diff_srv_rate = 0.0
-    dst_host_same_src_port_rate = 1.0
-    dst_host_srv_diff_host_rate = 0.0
-    dst_host_serror_rate = 0.0
-    dst_host_srv_serror_rate = 0.0
-    dst_host_rerror_rate = 0.0
-    dst_host_srv_rerror_rate = 0.0
-    
-    # Build feature dictionary matching NSL-KDD format
-    features = {
-        'duration': duration,
-        'protocol_type': protocol_type,
-        'service': service,
-        'flag': flag,
-        'src_bytes': src_bytes,
-        'dst_bytes': dst_bytes,
-        'land': 0,  # Not applicable for HTTP
-        'wrong_fragment': 0,
-        'urgent': 0,
-        'hot': num_shells,  # Suspicious patterns
-        'num_failed_logins': num_failed_logins,
-        'logged_in': logged_in,
-        'num_compromised': 0,
-        'root_shell': 0,
-        'su_attempted': 0,
-        'num_root': 0,
-        'num_file_creations': 0,
-        'num_shells': num_shells,
-        'num_access_files': num_access_files,
-        'num_outbound_cmds': 0,
-        'is_host_login': is_host_login,
-        'is_guest_login': is_guest_login,
-        'count': count,
-        'srv_count': srv_count,
-        'serror_rate': serror_rate,
-        'srv_serror_rate': srv_serror_rate,
-        'rerror_rate': rerror_rate,
-        'srv_rerror_rate': srv_rerror_rate,
-        'same_srv_rate': same_srv_rate,
-        'diff_srv_rate': diff_srv_rate,
-        'srv_diff_host_rate': srv_diff_host_rate,
-        'dst_host_count': dst_host_count,
-        'dst_host_srv_count': dst_host_srv_count,
-        'dst_host_same_srv_rate': dst_host_same_srv_rate,
-        'dst_host_diff_srv_rate': dst_host_diff_srv_rate,
-        'dst_host_same_src_port_rate': dst_host_same_src_port_rate,
-        'dst_host_srv_diff_host_rate': dst_host_srv_diff_host_rate,
-        'dst_host_serror_rate': dst_host_serror_rate,
-        'dst_host_srv_serror_rate': dst_host_srv_serror_rate,
-        'dst_host_rerror_rate': dst_host_rerror_rate,
-        'dst_host_srv_rerror_rate': dst_host_srv_rerror_rate
-    }
-    
-    return features
-
-# Flask before_request hook for automatic AI network traffic analysis
-@app.before_request
-def analyze_network_traffic_ai():
-    """
-    Automatically analyze all incoming network traffic using AI/ML models
-    Runs before every request to detect attacks in real-time
-    """
-    # Skip analysis for static files and favicon
-    if request.path.startswith('/static/') or request.path == '/favicon.ico':
-        return None
-    
-    # Skip analysis for network IDS API endpoints (to avoid recursion)
-    if request.path.startswith('/api/network-ids/'):
-        return None
-    
-    # IMMEDIATE MITIGATION: Check if IP is blocked and reject request immediately
-    client_ip = request.remote_addr
-    if RECOVERY_ENABLED and get_recovery_manager:
-        recovery_manager = get_recovery_manager()
-        if recovery_manager.is_ip_blocked(client_ip):
-            logger.warning(f"🚫 Blocked IP {client_ip} attempted to access {request.path} - request rejected")
-            return jsonify({
-                "error": "Access denied",
-                "message": "Your IP address has been temporarily blocked due to suspicious activity",
-                "status": 403
-            }), 403
-    
-    # Network Attack Detection for ALL requests (DDoS, Port Scan, etc.)
-    request_time = time.time()
-    
-    if ATTACK_DETECTION_ENABLED and get_network_attack_detector:
-        try:
-            network_detector = get_network_attack_detector()
-            
-            # Detect DoS Flood (for all requests)
-            dos_detected, dos_confidence, dos_details = network_detector.detect_dos_flood(client_ip, request_time)
-            if dos_detected and dos_confidence > 0.85:
-                log_event("DOS_FLOOD", dos_details, client_ip=client_ip, username=session.get('username') if has_request_context() and 'username' in session else None)
-                # IMMEDIATE MITIGATION: Block IP and stop attack immediately
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    # Record attack start (this will block the IP immediately)
-                    recovery_manager.record_attack_start("DOS_FLOOD", client_ip, dos_details, duration=None)
-                    # Immediately end the attack since it's being blocked
-                    recovery_manager.record_attack_end("DOS_FLOOD", client_ip)
-                    logger.warning(f"🛡️  DDoS attack from {client_ip} detected and blocked immediately")
-            
-            # Detect Port Scan
-            port = request.environ.get('SERVER_PORT', 5000)
-            endpoint = request.path
-            scan_detected, scan_confidence, scan_details = network_detector.detect_port_scan(client_ip, port, endpoint)
-            if scan_detected and scan_confidence > 0.85:
-                log_event("PORT_SCAN", scan_details, client_ip=client_ip, username=session.get('username') if has_request_context() and 'username' in session else None)
-                # IMMEDIATE MITIGATION: Block IP and stop attack immediately
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    # Record attack start (this will block the IP immediately)
-                    recovery_manager.record_attack_start("PORT_SCAN", client_ip, scan_details, duration=None)
-                    # Immediately end the attack since it's being blocked
-                    recovery_manager.record_attack_end("PORT_SCAN", client_ip)
-                    logger.warning(f"🛡️  Port scan from {client_ip} detected and blocked immediately")
-        except Exception as e:
-            logger.error(f"Error in network attack detection: {e}", exc_info=True)
-    
-    # Check if Network IDS is available and trained
-    if not NETWORK_IDS_ENABLED or get_network_ids is None:
-        return None
-    
-    try:
-        network_ids = get_network_ids()
-        
-        # Only analyze if model is trained
-        if not network_ids.is_trained:
-            return None
-        
-        # Extract network features from request
-        request_start_time = time.time()
-        features = extract_network_features(request, request_start_time)
-        
-        # Analyze using AI model
-        result = network_ids.analyze_network_traffic(features)
-        
-        # Check if attack detected
-        if result.get('prediction') == 'attack' and result.get('confidence', 0) > 0.7:
-            client_ip = request.remote_addr
-            confidence = result.get('confidence', 0)
-            details = f"AI-IDS detected malicious network traffic: {result.get('prediction')} (confidence: {confidence:.2f})"
-            
-            # Log the attack
-            log_event(
-                "AI_NETWORK_ATTACK",
-                details,
-                client_ip=client_ip,
-                username=session.get('username') if has_request_context() and 'username' in session else None
-            )
-            
-            logger.warning(f"🚨 AI-IDS Attack Detected: {details} from {client_ip}")
-        
-    except Exception as e:
-        # Don't block requests if AI analysis fails
-        logger.debug(f"Error in AI network traffic analysis: {e}")
-    
-    return None
 
 # Global variables
 USERS = load_users()
@@ -735,16 +316,6 @@ camera = None
 frame_lock = Lock()
 current_frame = None
 detection_log = []
-# Load existing logs from persistent storage on startup
-try:
-    detection_log = load_logs_from_file()
-    # Keep only last 1000 in memory for quick access
-    if len(detection_log) > 1000:
-        detection_log = detection_log[-1000:]
-    logger.info(f"Loaded {len(detection_log)} logs from persistent storage")
-except Exception as e:
-    logger.error(f"Error loading logs on startup: {e}")
-    detection_log = []
 video_writer = None
 video_start_time = None
 frame_count = 0
@@ -753,6 +324,7 @@ last_recording_restart = 0  # Track last restart time
 recording_restart_count = 0  # Count restart attempts
 runtime = {
     "detection_enabled": True,
+    "inject_enabled": False,
     "manual_attack": False,
     "status": "Initializing",
     "last_alert_time": None,
@@ -766,79 +338,27 @@ runtime = {
     "manual_attack_start_time": None,
     "manual_attack_session_id": None,
     "manual_attack_logged": False,
-    "manual_attack_username": None,
-    "inject_enabled": False,
     "inject_attack_start_time": None,
     "inject_attack_session_id": None,
-    "inject_attack_logged": False,
-    "inject_attack_username": None,
-    "video_injection_detected": False,  # Track if video injection was already detected
-    "video_injection_last_logged": None,  # Track last time video injection was logged
+    "inject_attack_logged": False
 }
 
 # Camera management
 def init_camera():
     global camera, runtime
-    # Release existing camera if any
-    if camera is not None:
-        try:
-            camera.release()
-        except:
-            pass
-        camera = None
-    
-    # Try different backends and camera indices
-    backends_to_try = [
-        (cv2.CAP_DSHOW, "DirectShow (Windows)"),
-        (cv2.CAP_ANY, "Any available"),
-    ]
-    
-    camera_indices_to_try = [Config.CAMERA_INDEX, 0, 1, 2]
-    
-    for camera_idx in camera_indices_to_try:
-        for backend, backend_name in backends_to_try:
-            try:
-                logger.info(f"Attempting to open camera {camera_idx} using {backend_name}...")
-                camera = cv2.VideoCapture(camera_idx, backend)
-                
-                if camera.isOpened():
-                    # Optimize camera settings for faster frame rate
-                    camera.set(cv2.CAP_PROP_FRAME_WIDTH, Config.FRAME_WIDTH)
-                    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, Config.FRAME_HEIGHT)
-                    camera.set(cv2.CAP_PROP_FPS, Config.FPS)
-                    camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Minimal buffer for lower latency
-                    
-                    # Test if we can actually read a frame
-                    ret, test_frame = camera.read()
-                    if ret and test_frame is not None:
-                        runtime["camera_connected"] = True
-                        runtime["status"] = "Running"
-                        logger.info(f"✓ Camera {camera_idx} initialized successfully using {backend_name}")
-                        # Update config to use the working camera index
-                        Config.CAMERA_INDEX = camera_idx
-                        return True
-                    else:
-                        logger.warning(f"Camera {camera_idx} opened but cannot read frames")
-                        camera.release()
-                        camera = None
-                else:
-                    if camera is not None:
-                        camera.release()
-                        camera = None
-            except Exception as e:
-                logger.warning(f"Failed to open camera {camera_idx} with {backend_name}: {str(e)}")
-                if camera is not None:
-                    try:
-                        camera.release()
-                    except:
-                        pass
-                    camera = None
-                continue
-    
-    logger.error(f"Failed to initialize any camera. Tried indices: {camera_indices_to_try}")
-    runtime["camera_connected"] = False
-    runtime["status"] = "Camera Not Available"
-    return False
+    try:
+        camera = cv2.VideoCapture(Config.CAMERA_INDEX, cv2.CAP_DSHOW)
+        if camera.isOpened():
+            runtime["camera_connected"] = True
+            runtime["status"] = "Running"
+            logger.info(f"Camera {Config.CAMERA_INDEX} initialized successfully")
+            return True
+        else:
+            logger.error(f"Failed to open camera {Config.CAMERA_INDEX}")
+            return False
+    except Exception as e:
+        logger.error(f"Camera initialization error: {str(e)}")
+        return False
 
 def release_camera():
     global camera, runtime, video_writer
@@ -1031,46 +551,7 @@ def login():
             })
         else:
             logger.warning(f"Login failed for: {username}")
-            client_ip = request.remote_addr
-            
-            # Track failed login attempts for unauthorized access detection
-            if not hasattr(login, 'failed_attempts'):
-                login.failed_attempts = {}
-            
-            if client_ip not in login.failed_attempts:
-                login.failed_attempts[client_ip] = 0
-            login.failed_attempts[client_ip] += 1
-            
-            # Update network features for AI analysis (if Network IDS is available)
-            if NETWORK_IDS_ENABLED and get_network_ids:
-                try:
-                    network_ids = get_network_ids()
-                    if network_ids.is_trained:
-                        # Update failed login count in feature extraction context
-                        # This will be used in next request analysis
-                        pass  # Feature extraction handles this dynamically
-                except:
-                    pass
-            
-            # Detect unauthorized access attempts
-            if ATTACK_DETECTION_ENABLED and get_network_attack_detector:
-                try:
-                    network_detector = get_network_attack_detector()
-                    unauthorized_detected, unauthorized_confidence, unauthorized_details = network_detector.detect_unauthorized_access(
-                        client_ip, login.failed_attempts[client_ip], False
-                    )
-                    if unauthorized_detected and unauthorized_confidence > 0.7:
-                        log_event("UNAUTHORIZED_ACCESS", unauthorized_details, client_ip=client_ip, username=username)
-                        # IMMEDIATE MITIGATION: Block IP and stop attack immediately
-                        if RECOVERY_ENABLED and get_recovery_manager:
-                            recovery_manager = get_recovery_manager()
-                            recovery_manager.record_attack_start("UNAUTHORIZED_ACCESS", client_ip, unauthorized_details, duration=None)
-                            recovery_manager.record_attack_end("UNAUTHORIZED_ACCESS", client_ip)
-                            logger.warning(f"🛡️  Unauthorized access attempt from {client_ip} detected and blocked immediately")
-                except Exception as e:
-                    logger.error(f"Error in unauthorized access detection: {e}")
-            
-            log_event("LOGIN_FAILED", f"Failed login attempt for {username} (Attempt {login.failed_attempts[client_ip]})", client_ip=client_ip, username=username)
+            log_event("LOGIN_FAILED", f"Failed login attempt for {username}", client_ip=request.remote_addr, username=username)
             
             return jsonify({
                 "success": False,
@@ -1081,13 +562,10 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Get username before clearing session (for logging)
-    username = session.get('username')
     # Clear session
     session.clear()
     logger.info("User logged out")
-    log_event("LOGOUT", "User logged out", username=username)
-    # Note: Camera and detection continue running after logout for security monitoring
+    log_event("LOGOUT", "User logged out", username=session.get('username'))
     return redirect(url_for('login'))
 
 @app.route('/profile')
@@ -1364,7 +842,6 @@ def api_update_profile():
     
     username = session.get('username')
     new_email = data.get('email', '').strip()
-    otp = data.get('otp', '').strip()
     
     if not new_email:
         return jsonify({
@@ -1377,37 +854,6 @@ def api_update_profile():
             "success": False,
             "message": "Please enter a valid email address"
         }), 400
-
-    # Require OTP verification for new email
-    otp_entry = OTP_STORAGE.get(new_email)
-    now = time.time()
-    if not otp or not otp_entry:
-        return jsonify({
-            "success": False,
-            "message": "OTP verification required for email update"
-        }), 400
-    if now > otp_entry.get('expiry', 0):
-        OTP_STORAGE.pop(new_email, None)
-        return jsonify({
-            "success": False,
-            "message": "OTP expired. Please request a new OTP."
-        }), 400
-    if otp_entry.get('otp') != otp:
-        # increment attempts
-        attempts = otp_entry.get('attempts', 0) + 1
-        otp_entry['attempts'] = attempts
-        if attempts >= 3:
-            OTP_STORAGE.pop(new_email, None)
-            return jsonify({
-                "success": False,
-                "message": "Maximum OTP attempts exceeded. Please request a new OTP."
-            }), 400
-        return jsonify({
-            "success": False,
-            "message": f"Invalid OTP. Attempts left: {3 - attempts}"
-        }), 400
-    # OTP verified
-    OTP_STORAGE.pop(new_email, None)
     
     # Update user email
     if username in USERS:
@@ -1506,22 +952,6 @@ def api_get_user_profile():
 def api_camera_start():
     """Start camera and recording"""
     try:
-        # Check if camera is already connected
-        if runtime.get("camera_connected", False) and camera is not None:
-            # Test if camera is still working
-            try:
-                ret, frame = camera.read()
-                if ret and frame is not None:
-                    return jsonify({
-                        "success": True,
-                        "message": "Camera is already running",
-                        "camera_connected": True
-                    })
-            except:
-                # Camera might be disconnected, try to reinitialize
-                pass
-        
-        # Initialize camera
         if init_camera():
             logger.info(f"Camera started by user: {session.get('username')}")
             start_new_recording()
@@ -1533,14 +963,12 @@ def api_camera_start():
                 "camera_connected": True
             })
         else:
-            error_msg = "Failed to start camera. Please check:\n1. Camera is connected\n2. No other application is using the camera\n3. Camera drivers are installed"
-            logger.error(error_msg)
             return jsonify({
                 "success": False,
-                "message": error_msg
+                "message": "Failed to start camera"
             }), 500
     except Exception as e:
-        logger.error(f"Error starting camera: {e}", exc_info=True)
+        logger.error(f"Error starting camera: {e}")
         return jsonify({
             "success": False,
             "message": f"Error starting camera: {str(e)}"
@@ -1606,98 +1034,48 @@ def api_generate_admin_code():
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# Add these routes to your Flask app
+@app.route('/api/start_detection', methods=['POST'])
+@login_required
+def start_detection():
+    if not background_service.running:
+        start_service()
+        return jsonify({"status": "success", "message": "Detection started"})
+    return jsonify({"status": "already_running", "message": "Detection is already running"})
+
+@app.route('/api/stop_detection', methods=['POST'])
+@login_required
+def stop_detection():
+    if background_service.running:
+        stop_service()
+        return jsonify({"status": "success", "message": "Detection stopped"})
+    return jsonify({"status": "not_running", "message": "Detection is not running"})
+
+@app.route('/api/detection_status', methods=['GET'])
+@login_required
+def detection_status():
+    return jsonify({
+        "running": background_service.running,
+        "detection_enabled": background_service.detection_enabled if background_service.running else False
+    })
+
+# Add this to ensure the service is stopped when the app exits
+@atexit.register
+def cleanup():
+    if background_service.running:
+        stop_service()
+
 @app.route('/api/status', methods=['GET'])
 def status():
-    # Network Attack Detection for all requests
-    client_ip = request.remote_addr
-    request_time = time.time()
-    
-    if ATTACK_DETECTION_ENABLED and get_network_attack_detector:
-        try:
-            network_detector = get_network_attack_detector()
-            
-            # Detect DoS Flood (for all requests)
-            dos_detected, dos_confidence, dos_details = network_detector.detect_dos_flood(client_ip, request_time)
-            if dos_detected and dos_confidence > 0.85:
-                log_event("DOS_FLOOD", dos_details, client_ip=client_ip, username=session.get('username') if has_request_context() else None)
-                # Record attack for recovery tracking
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    recovery_manager.record_attack_start("DOS_FLOOD", client_ip, dos_details, duration=30)
-            
-            # Detect Port Scan
-            port = request.environ.get('SERVER_PORT', 5000)
-            endpoint = request.path
-            scan_detected, scan_confidence, scan_details = network_detector.detect_port_scan(client_ip, port, endpoint)
-            if scan_detected and scan_confidence > 0.85:
-                log_event("PORT_SCAN", scan_details, client_ip=client_ip, username=session.get('username') if has_request_context() else None)
-                # Record attack for recovery tracking
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    recovery_manager.record_attack_start("PORT_SCAN", client_ip, scan_details, duration=20)
-        except Exception as e:
-            logger.error(f"Error in network attack detection: {e}", exc_info=True)
-    
-    # Load logs from persistent storage for complete history
-    try:
-        persistent_logs = load_logs_from_file()
-        
-        # Ensure persistent_logs is a list
-        if not isinstance(persistent_logs, list):
-            persistent_logs = []
-        
-        # Merge with in-memory logs (in-memory might have newer entries)
-        # Create a set of IDs from persistent logs for fast lookup
-        persistent_ids = {log.get("id") for log in persistent_logs if log.get("id")}
-        
-        # Start with persistent logs
-        logs_to_return = persistent_logs.copy()
-        
-        # Add any new entries from in-memory that aren't in persistent
-        if len(detection_log) > 0:
-            for mem_entry in detection_log:
-                mem_id = mem_entry.get("id")
-                if mem_id and mem_id not in persistent_ids:
-                    logs_to_return.append(mem_entry)
-                    persistent_ids.add(mem_id)
-        
-        # Sort by timestamp to ensure chronological order (newest last for display)
-        logs_to_return.sort(key=lambda x: x.get("timestamp", x.get("time", "")), reverse=False)
-        
-        # Ensure all entries have required fields
-        for log in logs_to_return:
-            if 'id' not in log:
-                log['id'] = str(uuid.uuid4())
-            if 'time' not in log and 'timestamp' in log:
-                try:
-                    dt = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
-                    log['time'] = dt.strftime("%Y-%m-%d %H:%M:%S")
-                except:
-                    log['time'] = log.get('timestamp', 'N/A')
-            if 'timestamp' not in log and 'time' in log:
-                try:
-                    dt = datetime.strptime(log['time'], "%Y-%m-%d %H:%M:%S")
-                    log['timestamp'] = dt.isoformat()
-                except:
-                    log['timestamp'] = log.get('time', '')
-            if 'event_type' not in log:
-                log['event_type'] = 'INFO'
-            if 'reason' not in log:
-                log['reason'] = 'No reason provided'
-        
-    except Exception as e:
-        logger.error(f"Error loading logs for status: {e}", exc_info=True)
-        logs_to_return = detection_log if detection_log else []
-    
     return jsonify({
         "detection_enabled": runtime["detection_enabled"],
-        "manual_attack": runtime["manual_attack"],
         "inject_enabled": runtime["inject_enabled"],
+        "manual_attack": runtime["manual_attack"],
         "status": runtime["status"],
         "camera_connected": runtime["camera_connected"],
         "last_alert_time": runtime["last_alert_time"],
         "sound_active": runtime["sound_active"],
-        "log": logs_to_return,  # Return all logs from persistent storage
+        "log": detection_log,  # Return all logs to maintain complete history
         "timestamp": datetime.now().isoformat()
     })
 
@@ -1714,40 +1092,6 @@ def control():
     # Detect suspicious control patterns
     client_ip = request.remote_addr
     current_time = datetime.now()
-    request_time = time.time()
-    
-    # Network Attack Detection
-    if ATTACK_DETECTION_ENABLED and get_network_attack_detector:
-        try:
-            network_detector = get_network_attack_detector()
-            
-            # Detect Port Scan / Reconnaissance (only alert on high confidence)
-            port = request.environ.get('SERVER_PORT', 5000)
-            endpoint = request.path
-            scan_detected, scan_confidence, scan_details = network_detector.detect_port_scan(client_ip, port, endpoint)
-            if scan_detected and scan_confidence > 0.85:  # Increased from 0.7 to 0.85
-                log_event("PORT_SCAN", scan_details, client_ip=client_ip, username=session.get('username'))
-                # Record attack for recovery tracking (estimate 20s duration for port scans)
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    recovery_manager.record_attack_start("PORT_SCAN", client_ip, scan_details, duration=20)
-            
-            # Detect DoS Flood (only alert on high confidence)
-            dos_detected, dos_confidence, dos_details = network_detector.detect_dos_flood(client_ip, request_time)
-            if dos_detected and dos_confidence > 0.85:  # Increased from 0.7 to 0.85
-                log_event("DOS_FLOOD", dos_details, client_ip=client_ip, username=session.get('username'))
-                # Record attack for recovery tracking (estimate 30s duration for DDoS)
-                if RECOVERY_ENABLED and get_recovery_manager:
-                    recovery_manager = get_recovery_manager()
-                    recovery_manager.record_attack_start("DOS_FLOOD", client_ip, dos_details, duration=30)
-            
-            # Detect Web Exploits (only alert on high confidence)
-            payload = str(data) if data else ""
-            exploit_detected, exploit_confidence, exploit_details = network_detector.detect_web_exploit(endpoint, payload)
-            if exploit_detected and exploit_confidence > 0.85:  # Increased from 0.7 to 0.85
-                log_event("WEB_EXPLOIT", exploit_details, client_ip=client_ip, username=session.get('username'))
-        except Exception as e:
-            logger.error(f"Error in network attack detection: {e}", exc_info=True)
     
     # Check for rapid control requests (potential attack)
     if not hasattr(control, 'last_control_time'):
@@ -1769,10 +1113,6 @@ def control():
     if control.control_count[key] > 10:
         logger.warning(f"Excessive control requests from {client_ip}: {control.control_count[key]} requests")
         log_event("BRUTE_FORCE_ATTEMPT", f"Excessive control requests from {client_ip}", client_ip=client_ip, username=session.get('username'))
-        # Record attack for recovery tracking (estimate 30s duration for brute force)
-        if RECOVERY_ENABLED and get_recovery_manager:
-            recovery_manager = get_recovery_manager()
-            recovery_manager.record_attack_start("BRUTE_FORCE_ATTEMPT", client_ip, f"Excessive control requests from {client_ip}", duration=30)
     
     if action == 'start':
         runtime["detection_enabled"] = True
@@ -1785,7 +1125,6 @@ def control():
         if not runtime["manual_attack"]:
             # Start manual attack
             runtime["manual_attack"] = True
-            runtime["manual_attack_username"] = session.get('username')  # Store username who triggered the attack
             logger.info("Manual attack started")
             log_event("MANUAL_ATTACK_TRIGGER", f"Manual attack triggered by {client_ip}", client_ip=client_ip, username=session.get('username'))
         else:
@@ -1796,22 +1135,16 @@ def control():
         if not runtime["inject_enabled"]:
             # Start inject attack
             runtime["inject_enabled"] = True
-            runtime["inject_attack_username"] = session.get('username')  # Store username who triggered the attack
             logger.info("Inject attack started")
             log_event("INJECT_ATTACK_TRIGGER", f"Inject attack triggered by {client_ip}", client_ip=client_ip, username=session.get('username'))
         else:
             # Stop inject attack - this will trigger session logging
             runtime["inject_enabled"] = False
             logger.info("Inject attack stopped")
-            # Record attack end for recovery
-            if RECOVERY_ENABLED and get_recovery_manager:
-                recovery_manager = get_recovery_manager()
-                recovery_manager.record_attack_end("VIDEO_INJECTION", client_ip)
     else:
         return jsonify({"error": f"Unknown action: {action}"}), 400
     
     return jsonify({"success": True, "action": action, "runtime": runtime})
-
 
 @app.route('/api/clear_logs', methods=['POST'])
 def clear_logs():
@@ -1820,15 +1153,9 @@ def clear_logs():
     # Detect suspicious log clearing
     client_ip = request.remote_addr
     logger.warning(f"Log clearing attempt from {client_ip}")
-    log_event("SYSTEM_TAMPERING", f"Log clearing attempt by {client_ip}", client_ip=client_ip, username=session.get('username') if has_request_context() else None)
+    log_event("SYSTEM_TAMPERING", f"Log clearing attempt by {client_ip}", client_ip=client_ip, username=session.get('username'))
     
-    # Clear both in-memory and persistent logs
     detection_log.clear()
-    try:
-        save_logs_to_file([])  # Clear persistent storage
-    except Exception as e:
-        logger.error(f"Error clearing persistent logs: {e}")
-    
     logger.info("Logs cleared via API")
     return jsonify({"success": True, "message": "Logs cleared"})
 
@@ -1909,37 +1236,8 @@ def list_recordings():
         recordings = []
         recordings_dir = Config.RECORDINGS_DIR
         
-        # Check if recordings directory exists
-        if not os.path.exists(recordings_dir):
-            os.makedirs(recordings_dir, exist_ok=True)
-            return jsonify({
-                "recordings": [],
-                "available_dates": [],
-                "statistics": {
-                    "total_count": 0,
-                    "total_size": 0,
-                    "total_size_mb": 0,
-                    "total_size_gb": 0
-                }
-            })
-        
         # Get all video files
-        try:
-            files = os.listdir(recordings_dir)
-        except Exception as e:
-            logger.error(f"Error reading recordings directory: {e}")
-            return jsonify({
-                "recordings": [],
-                "available_dates": [],
-                "statistics": {
-                    "total_count": 0,
-                    "total_size": 0,
-                    "total_size_mb": 0,
-                    "total_size_gb": 0
-                }
-            }), 500
-        
-        for filename in files:
+        for filename in os.listdir(recordings_dir):
             if filename.endswith('.mp4'):
                 filepath = os.path.join(recordings_dir, filename)
                 stat = os.stat(filepath)
@@ -2060,23 +1358,20 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
             runtime["obstruction_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["session_logged"] = False
             logger.info("Camera obstruction detected - starting timer")
-            # Log obstruction detection (no email yet - email will be sent at 15 seconds)
-            # Use a non-important event type to avoid immediate email
-            log_event("OBSTRUCTION_STARTED", f"Camera obstruction detected: {reason}", username=None)
         else:
             obstruction_duration = current_time - runtime["obstruction_start_time"]
             
-            # 5-second sound alert (beep sound)
+            # 5-second sound alert (start continuous sound)
             if obstruction_duration >= 5 and not runtime["sound_alert_played"]:
-                logger.warning("🔊 Camera covered for 5 seconds - PLAYING BEEP SOUND")
+                logger.warning("Camera covered for 5 seconds - STARTING SOUND ALERT")
+                # Don't log SOUND_ALERT separately - include in session summary
                 runtime["sound_alert_played"] = True
                 runtime["sound_active"] = True
-                # Log sound alert
-                log_event("SOUND_ALERT", f"Beep sound played - camera covered for {obstruction_duration:.0f} seconds", username=None)
             
-            # 15-second email notification
-            if obstruction_duration >= 15 and not runtime["obstruction_notified"]:
-                logger.error("🚨 CAMERA COVERED FOR 15 SECONDS - SENDING EMAIL NOTIFICATION 🚨")
+            # 20-second notification
+            if obstruction_duration >= 20 and not runtime["obstruction_notified"]:
+                logger.error("🚨 CAMERA COVERED FOR 20 SECONDS - SENDING NOTIFICATION 🚨")
+                # Don't log NOTIFICATION separately - include in session summary
                 runtime["obstruction_notified"] = True
                 
                 # Always show console notification
@@ -2086,8 +1381,7 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
                 print(f"Reason: {reason}")
                 print("="*60 + "\n")
                 
-                # Send email notification
-                log_event("OBSTRUCTION_DETECTED", f"Camera obstruction alert - covered for {obstruction_duration:.0f} seconds: {reason}", username=None)
+                # Send email notification if configured
                 send_notification_email(reason, obstruction_duration, username=None)
         
         return True
@@ -2157,16 +1451,13 @@ def handle_manual_attack_timing(is_manual_attack, current_time):
                     "reason": "Manual attack triggered"
                 }
                 
-                # Use stored username for notification
-                manual_username = runtime.get("manual_attack_username")
-                log_event("MANUAL_ATTACK_SESSION", f"Manual attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=manual_username)
+                log_event("MANUAL_ATTACK_SESSION", f"Manual attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=None)
                 runtime["manual_attack_logged"] = True  # Mark as logged to prevent duplicates
             
             # Reset all manual attack tracking variables
             runtime["manual_attack_start_time"] = None
             runtime["manual_attack_session_id"] = None
             runtime["manual_attack_logged"] = False
-            runtime["manual_attack_username"] = None
         
         return False
 
@@ -2179,9 +1470,6 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
             runtime["inject_attack_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["inject_attack_logged"] = False
             logger.info("Inject attack detected - starting session")
-            # Log the trigger only once when attack starts (if username is available)
-            if runtime.get("inject_attack_username"):
-                log_event("INJECT_ATTACK_TRIGGER", f"Inject attack started", username=runtime["inject_attack_username"])
         return True
     else:
         # Reset inject attack timer if attack is no longer active
@@ -2204,19 +1492,14 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
                     "reason": "Video injection attack detected"
                 }
                 
-                # Use stored username for notification
-                inject_username = runtime.get("inject_attack_username")
-                log_event("INJECT_ATTACK_SESSION", f"Inject attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=inject_username)
+                log_event("INJECT_ATTACK_SESSION", f"Inject attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=None)
                 runtime["inject_attack_logged"] = True  # Mark as logged to prevent duplicates
             
             # Reset all inject attack tracking variables
             runtime["inject_attack_start_time"] = None
             runtime["inject_attack_session_id"] = None
             runtime["inject_attack_logged"] = False
-            runtime["inject_attack_username"] = None
         
-        return False
-
 def send_notification_email(reason, duration, username=None):
     """Send email notification about security events"""
     import smtplib
@@ -2226,7 +1509,12 @@ def send_notification_email(reason, duration, username=None):
     try:
         logger.info("Starting email notification process...")
         
-        # Check if email is configured (loaded from .env file)
+        # Check if email is configured
+        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+            # Fallback to environment variables if not set in Config
+            Config.MAIL_USERNAME = os.getenv('GMAIL_EMAIL', Config.MAIL_USERNAME)
+            Config.MAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', Config.MAIL_PASSWORD)
+
         logger.info(f"Using email: {Config.MAIL_USERNAME}")
         
         if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
@@ -2234,44 +1522,22 @@ def send_notification_email(reason, duration, username=None):
             logger.warning(error_msg)
             return False
             
-        # Determine recipient email based on provided username or session
-        recipient_email = None
+        # Determine recipient email based on provided username or fallback
+        recipient_email = Config.ALERT_EMAIL
         if username:
             users = load_users()
             user_data = users.get(username)
             if user_data and user_data.get('email'):
                 recipient_email = user_data['email']
-        elif has_request_context() and 'username' in session: # Fallback to session if available
-            try:
-                current_session_username = session.get('username')
-                users = load_users()
-                user_data = users.get(current_session_username)
-                if user_data and user_data.get('email'):
-                    recipient_email = user_data['email']
-            except RuntimeError:
-                # Session not available in this context
-                pass
-
-        # If no specific user email found, try to send to admins or any user with email from users.json
-        if not recipient_email:
+        elif 'username' in session: # Fallback to session if available
+            current_session_username = session.get('username')
             users = load_users()
-            # Find first admin user with email
-            for user_name, user_data in users.items():
-                user_role = user_data.get('role', '').lower()
-                if (user_role == 'administrator' or user_role == 'admin') and user_data.get('email'):
-                    recipient_email = user_data['email']
-                    logger.info(f"No specific user email found, sending obstruction notification to admin: {user_name}")
-                    break
-            # If still no admin found, try any user with email
-            if not recipient_email:
-                for user_name, user_data in users.items():
-                    if user_data.get('email'):
-                        recipient_email = user_data['email']
-                        logger.info(f"No admin email found, sending obstruction notification to user: {user_name}")
-                        break
-        
+            user_data = users.get(current_session_username)
+            if user_data and user_data.get('email'):
+                recipient_email = user_data['email']
+
         if not recipient_email:
-            error_msg = "No recipient email found in users.json - notification not sent"
+            error_msg = "No alert email configured - notification not sent"
             logger.warning(error_msg)
             return False
 
@@ -2304,6 +1570,9 @@ def send_notification_email(reason, duration, username=None):
             server = smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=10)
             logger.info("SMTP connection established")
             
+            # Enable debug output
+            server.set_debuglevel(1)
+            
             # Start TLS
             logger.info("Starting TLS...")
             server.ehlo()
@@ -2316,9 +1585,9 @@ def send_notification_email(reason, duration, username=None):
             logger.info("Login successful")
             
             # Send email
-            logger.info(f"Sending email to {recipient_email}...")
+            logger.info("Sending email...")
             server.send_message(msg)
-            logger.info(f"✓ Email notification sent successfully to {recipient_email}")
+            logger.info(f"Email notification sent to {recipient_email}")
             
             # Quit server
             server.quit()
@@ -2346,27 +1615,28 @@ def send_notification_email(reason, duration, username=None):
         error_msg = f"Fatal error in send_notification_email: {str(e)}"
         logger.error(error_msg, exc_info=True)
         return False
-
-# Detection loop that runs continuously in background (works even after logout)
-def run_detection_loop():
-    """Continuous detection loop - runs independently of video feed requests"""
-    # Initialize recovery manager if available
-    recovery_manager = None
-    if RECOVERY_ENABLED and get_recovery_manager:
-        recovery_manager = get_recovery_manager()
-        logger.info("Recovery manager initialized in detection loop")
     
+    # Photo capture disabled - not saving frames
+    
+    detection_log.append(entry)
+    
+    # Keep only last 100 events
+    if len(detection_log) > 100:
+        detection_log.pop(0)
+    
+    logger.info(f"Event logged: {event_type} - {reason}")
+
+# Frame generation and processing
+def gen_frames():
     global current_frame, runtime, video_writer, video_start_time
     prev_frame = None
     obstruction_count = 0
-    frame_counter = 0
     
     # Start recording when camera initializes
     if recording_enabled and video_writer is None and runtime["camera_connected"]:
         start_new_recording()
     
     while True:
-        # Auto-initialize camera if not connected (works even after logout)
         if not runtime["camera_connected"]:
             if not init_camera():
                 time.sleep(2)
@@ -2375,19 +1645,11 @@ def run_detection_loop():
             # Start recording when camera connects
             if recording_enabled and video_writer is None:
                 start_new_recording()
-        
-        # Ensure detection is enabled by default for security (works even after logout)
-        if not runtime.get("detection_enabled", False):
-            runtime["detection_enabled"] = True
-            logger.info("Detection auto-enabled for security monitoring")
 
         try:
             success, frame = camera.read()
             if not success or frame is None:
                 logger.warning("Failed to read frame from camera, attempting to re-initialize.")
-                # Detect cable cutting / camera disconnect
-                if runtime["camera_connected"]:
-                    log_event("CABLE_CUTTING", "Camera disconnected - possible cable cutting or tampering", username=None)
                 release_camera() # Release existing camera
                 time.sleep(1) # Wait a bit before trying to re-initialize
                 runtime["camera_connected"] = False # Mark as disconnected to trigger re-init
@@ -2397,9 +1659,9 @@ def run_detection_loop():
             alert_reason = None
             annotated_frame = frame.copy()
             
-            # Resize frame for consistent recording (use INTER_LINEAR for speed)
-            frame = cv2.resize(frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT), interpolation=cv2.INTER_LINEAR)
-            annotated_frame = cv2.resize(annotated_frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT), interpolation=cv2.INTER_LINEAR)
+            # Resize frame for consistent recording
+            frame = cv2.resize(frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
+            annotated_frame = cv2.resize(annotated_frame, (Config.FRAME_WIDTH, Config.FRAME_HEIGHT))
             
             # Add timestamp to all frames for CCTV recording
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2410,9 +1672,7 @@ def run_detection_loop():
                 # Simulate video freeze/injection
                 annotated_frame = _add_annotation(frame, "INJECT: FREEZE", (10, 50), (0, 165, 255))
                 is_alert = True
-                # Don't set alert_reason here - let handle_inject_attack_timing handle logging
-                # This prevents repeated logging every frame
-                alert_reason = None  # Will be set by handle_inject_attack_timing if needed
+                alert_reason = "Video injection attack detected"
             elif not runtime["detection_enabled"]:
                 annotated_frame = _add_annotation(frame, "Status: Detection OFF", (10, 30), (0, 255, 0))
             else:
@@ -2431,74 +1691,12 @@ def run_detection_loop():
                     is_alert = True
                     alert_reason = obstruction_msg
                 
-                # Comprehensive Attack Detection (run less frequently for performance)
-                if ATTACK_DETECTION_ENABLED and get_attack_detector and frame_counter % 10 == 0:  # Run every 10th frame
-                    try:
-                        attack_detector = get_attack_detector()
-                        current_timestamp = time.time()
-                        
-                        # 1. Frame Freeze Detection (only alert on high confidence)
-                        freeze_detected, freeze_confidence, freeze_details = attack_detector.detect_frame_freeze(frame)
-                        if freeze_detected and freeze_confidence > 0.85:  # Increased from 0.7 to 0.85
-                            is_alert = True
-                            if alert_reason:
-                                alert_reason = f"{alert_reason} | Frame Freeze: {freeze_details}"
-                            else:
-                                alert_reason = f"Frame Freeze: {freeze_details}"
-                            log_event("FRAME_FREEZE", freeze_details, username=None)
-                        
-                        # 2. Video Injection Detection (only alert on high confidence, only once - not in loop)
-                        injection_detected, injection_confidence, injection_details = attack_detector.detect_video_injection(frame, current_timestamp)
-                        if injection_detected and injection_confidence > 0.85:  # Increased from 0.8 to 0.85 to reduce false positives
-                            # Only log and record once, not repeatedly in loop
-                            if not runtime.get("video_injection_detected", False):
-                                is_alert = True
-                                if alert_reason:
-                                    alert_reason = f"{alert_reason} | Video Injection: {injection_details}"
-                                else:
-                                    alert_reason = f"Video Injection: {injection_details}"
-                                log_event("VIDEO_INJECTION", injection_details, username=None)
-                                runtime["video_injection_detected"] = True
-                                runtime["video_injection_last_logged"] = current_timestamp
-                                # Record attack for recovery tracking (only once)
-                                if RECOVERY_ENABLED and get_recovery_manager:
-                                    recovery_manager = get_recovery_manager()
-                                    recovery_manager.record_attack_start("VIDEO_INJECTION", None, injection_details)
-                            else:
-                                # Already detected, just show alert but don't log again
-                                is_alert = True
-                                if not alert_reason:
-                                    alert_reason = "Video Injection: Ongoing"
-                        else:
-                            # Reset detection flag if injection is no longer detected (after 5 seconds)
-                            if runtime.get("video_injection_detected", False):
-                                last_logged = runtime.get("video_injection_last_logged")
-                                if last_logged and (current_timestamp - last_logged > 5):
-                                    runtime["video_injection_detected"] = False
-                                    runtime["video_injection_last_logged"] = None
-                        
-                        # 3. Motion Masking Detection (only alert on high confidence)
-                        if prev_frame is not None:
-                            masking_detected, masking_confidence, masking_details = attack_detector.detect_motion_masking(frame, prev_frame)
-                            if masking_detected and masking_confidence > 0.75:  # Increased from 0.6 to 0.75
-                                is_alert = True
-                                if alert_reason:
-                                    alert_reason = f"{alert_reason} | Motion Masking: {masking_details}"
-                                else:
-                                    alert_reason = f"Motion Masking: {masking_details}"
-                                log_event("MOTION_MASKING", masking_details, username=None)
-                    except Exception as e:
-                        logger.error(f"Error in attack detection: {e}", exc_info=True)
-                
                 # Add status text
-                status_text = "Status: Monitoring"
-                status_color = (0, 255, 0)
-                
                 if is_alert:
                     annotated_frame = _add_annotation(annotated_frame, f"ALERT: {alert_reason}", (10, 30), (0, 0, 255))
                     runtime["status"] = "ALERT"
                 else:
-                    annotated_frame = _add_annotation(annotated_frame, status_text, (10, 30), status_color)
+                    annotated_frame = _add_annotation(annotated_frame, "Status: Monitoring", (10, 30), (0, 255, 0))
                     runtime["status"] = "Running"
 
             # Handle attack session timing
@@ -2510,34 +1708,23 @@ def run_detection_loop():
             # Update inject attack timing based on runtime flag
             handle_inject_attack_timing(runtime["inject_enabled"], current_time)
             
-            # Only log generic ALERTs if they are not part of an ongoing session
+            # Only log alerts that are not part of sessions
             if is_alert and alert_reason:
-                should_log_alert = True
-
-                # Check if an obstruction session is active and handling this alert
-                if runtime["obstruction_start_time"] and ("obstructed" in alert_reason or "covered" in alert_reason):
-                    should_log_alert = False
-                # Check if a manual attack session is active and handling this alert
-                elif runtime["manual_attack_start_time"] and alert_reason == "Manual attack triggered":
-                    should_log_alert = False
-                # Check if an inject attack session is active - don't log generic alerts during inject
-                elif runtime["inject_attack_start_time"]:
-                    should_log_alert = False
-
-                if should_log_alert:
+                # Don't log individual alerts that are handled by sessions
+                if not (runtime["obstruction_start_time"] and 
+                       ("obstructed" in alert_reason or "covered" in alert_reason)) and \
+                   not (runtime["manual_attack_start_time"] and alert_reason == "Manual attack triggered") and \
+                   not (runtime["inject_attack_start_time"] and alert_reason == "Inject attack triggered"):
                     log_event("ALERT", alert_reason)
             
-            # Write frame to video file (CCTV recording) - skip some frames for performance
-            if frame_counter % 2 == 0:  # Write every other frame to video
-                write_frame_to_video(annotated_frame)
+            # Write frame to video file (CCTV recording)
+            write_frame_to_video(annotated_frame)
             
-            # Store previous frame for motion detection (only if needed)
-            if prev_frame is None or frame_counter % 3 == 0:  # Update every 3rd frame
-                prev_frame = frame.copy()
+            # Store previous frame for motion detection
+            prev_frame = frame.copy()
 
-            # Encode the frame for web streaming (optimize JPEG quality for speed)
-            encode_params = [cv2.IMWRITE_JPEG_QUALITY, 70]  # Reduced quality for faster encoding
-            ret, buffer = cv2.imencode('.jpg', annotated_frame, encode_params)
+            # Encode the frame for web streaming
+            ret, buffer = cv2.imencode('.jpg', annotated_frame)
             if not ret:
                 logger.warning("Failed to encode frame")
                 continue
@@ -2545,44 +1732,13 @@ def run_detection_loop():
             frame_bytes = buffer.tobytes()
             with frame_lock:
                 current_frame = frame_bytes
-            
-            frame_counter += 1
-            
-            # Check and perform recovery (every 1 second for faster response)
-            if recovery_manager and frame_counter % 100 == 0:  # Check every ~1 second at 100 FPS
-                try:
-                    recovered = recovery_manager.check_and_recover()
-                    for attack_type, attack_id in recovered:
-                        recovery_msg = f"System recovered from {attack_type} attack"
-                        log_event("RECOVERY_COMPLETE", recovery_msg, username=None)
-                        logger.info(f"✅ {recovery_msg}")
-                except Exception as e:
-                    logger.error(f"Error in recovery check: {e}", exc_info=True)
-            
-            # Minimal sleep for faster frame rate (target ~60 FPS)
-            time.sleep(0.01)  # ~10ms = ~100 FPS max (but camera limits actual rate)
-                
-        except Exception as e:
-            logger.error(f"Error in detection loop: {e}")
-            time.sleep(1)
-            continue
 
-# Frame generation and processing (for video feed streaming)
-def gen_frames():
-    """Generate frames for video feed - uses latest frame from detection loop"""
-    global current_frame
-    while True:
-        try:
-            with frame_lock:
-                if current_frame is not None:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + current_frame + b'\r\n')
-                else:
-                    # If no frame available yet, wait a bit
-                    time.sleep(0.1)
-                    continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
         except Exception as e:
             logger.error(f"Error in frame generation: {str(e)}")
+            runtime["camera_connected"] = False
             time.sleep(1)
 
 # Cleanup on exit
@@ -2602,6 +1758,7 @@ def test_email_route():
         # Test email configuration
         logger.info("\n=== Starting Email Test ===")
         logger.info(f"Sender email: {Config.MAIL_USERNAME}")
+        logger.info(f"Recipient email: {Config.ALERT_EMAIL}")
         logger.info(f"SMTP Server: {Config.MAIL_SERVER}:{Config.MAIL_PORT}")
         logger.info(f"Using TLS: {Config.MAIL_USE_TLS}")
         
@@ -2610,15 +1767,11 @@ def test_email_route():
             error_msg = "Email username or password not configured"
             logger.error(error_msg)
             return error_msg
-        
-        # Get recipient email from current user or first available user
-        recipient_email = get_alert_email()
-        if not recipient_email:
-            error_msg = "No user email found - cannot send test email. Please ensure at least one user has an email configured."
+            
+        if not Config.ALERT_EMAIL:
+            error_msg = "No recipient email configured"
             logger.error(error_msg)
             return error_msg
-        
-        logger.info(f"Recipient email: {recipient_email}")
         
         logger.info("Configuration check passed. Attempting to send test email...")
         
@@ -2679,75 +1832,10 @@ def test_email_alert():
             "message": f"Failed to send test alert: {str(e)}"
         }), 500
 
-def start_detection_background():
-    """Start detection in background thread - runs continuously even after logout"""
-    def detection_loop():
-        logger.info("Starting background detection loop...")
-        try:
-            run_detection_loop()
-        except Exception as e:
-            logger.error(f"Error in background detection loop: {e}")
-            # Restart the loop after a delay
-            time.sleep(5)
-            start_detection_background()
-    
-    detection_thread = threading.Thread(target=detection_loop, daemon=True)
-    detection_thread.start()
-    logger.info("Background detection thread started - attack detection will work even after logout")
-
 if __name__ == '__main__':
-    # Initialize AI-IDS system (camera will be started automatically)
+    # Initialize AI-IDS system (camera will be started after login)
     logger.info("Initializing AI-IDS system...")
-    logger.info("Starting continuous detection monitoring (works even after logout)")
-    
-    
-    # Verify email configuration
-    logger.info("\n=== Email Configuration Check ===")
-    if Config.MAIL_USERNAME and Config.MAIL_PASSWORD:
-        logger.info(f"✓ Gmail Email: {Config.MAIL_USERNAME}")
-        logger.info(f"✓ App Password: {'*' * len(Config.MAIL_PASSWORD)} (configured)")
-        logger.info(f"✓ SMTP Server: {Config.MAIL_SERVER}:{Config.MAIL_PORT}")
-    else:
-        logger.warning("⚠ Email not configured!")
-        logger.warning("Please create a .env file with:")
-        logger.warning("  GMAIL_EMAIL=your-email@gmail.com")
-        logger.warning("  GMAIL_APP_PASSWORD=your-16-char-app-password")
-        logger.warning("Email notifications will not work until configured.")
-    logger.info("=" * 40 + "\n")
-    
-    # Check Network IDS status and attempt to load pre-trained model
-    if NETWORK_IDS_ENABLED and get_network_ids:
-        try:
-            network_ids = get_network_ids()
-            # Try to load pre-trained model if available
-            model_paths = [
-                'models/network_ids/random_forest_model.pkl',
-                'models/network_ids/dnn_model.h5',
-                'models/random_forest_model.pkl',
-                'models/dnn_model.h5'
-            ]
-            for model_path in model_paths:
-                if os.path.exists(model_path):
-                    try:
-                        network_ids.load_model(model_path)
-                        logger.info(f"✓ AI Network IDS model loaded: {model_path}")
-                        logger.info(f"  Model Type: {network_ids.model_type}")
-                        logger.info(f"  Accuracy: {network_ids.metrics.get('accuracy', 0):.2%}")
-                        break
-                    except Exception as e:
-                        logger.debug(f"Could not load model {model_path}: {e}")
-                        continue
-            if not network_ids.is_trained:
-                logger.info("ℹ️  Network IDS available but no trained model loaded.")
-                logger.info("   Train a model via /api/network-ids/train or load via /api/network-ids/load-model")
-                logger.info("   AI network traffic analysis will be disabled until model is trained.")
-        except Exception as e:
-            logger.warning(f"Error initializing Network IDS: {e}")
-    else:
-        logger.info("ℹ️  Network IDS not available - AI network traffic analysis disabled")
-    
-    # Start detection in background thread so it runs continuously
-    start_detection_background()
+    logger.info("Camera will be initialized after user login")
     
     # Debug: List all registered routes
     logger.info("Registered routes:")
