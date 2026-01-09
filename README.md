@@ -1,6 +1,5 @@
 # AI-IDS for IoT Devices (CCTV)
 
-![AI-IDS Banner](https://via.placeholder.com/1200x400/1e3a8a/ffffff?text=AI-IDS+for+IOT+Devices+-+CCTV+Security)
 
 ## 📋 Overview
 AI-IDS for IoT Devices is an intelligent security solution designed to protect CCTV camera networks from cyber threats. This system uses advanced machine learning algorithms to monitor, detect, and respond to potential security breaches in real-time, specifically tailored for IoT device security.
