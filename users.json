@@ -5,12 +5,5 @@
         "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
         "role": "admin",
         "created_at": "2025-12-06T15:36:11.837081"
-    },
-    "anirudh": {
-        "username": "anirudh",
-        "password": "a4800840acfe6365361777c7dfb63e0d1f577ad7a84259328afe62a5520495f9",
-        "email": "anirudhgm2020@gmail.com",
-        "role": "user",
-        "created_at": "2025-12-06T15:36:11.838084"
     }
 }
