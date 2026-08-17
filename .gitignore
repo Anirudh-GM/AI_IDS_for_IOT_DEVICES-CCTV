@@ -77,3 +77,4 @@ instance/
 .env.local
 .env.*.local
 users.json
+.codesight/
