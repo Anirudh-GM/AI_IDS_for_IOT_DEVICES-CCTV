@@ -1,5 +1,5 @@
 # app.py — Enhanced version with better error handling and features
-from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for, flash, send_from_directory
+from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for, flash, send_from_directory, has_request_context
 import cv2
 import numpy as np
 import time
@@ -18,8 +18,10 @@ import uuid
 from email.mime.text import MIMEText
 import smtplib
 import random
-from background_service import background_service, start_service, stop_service
 import atexit
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,8 +50,8 @@ class Config:
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
-    MAIL_USERNAME = 'chaitanya030605@gmail.com'  # Sender email
-    MAIL_PASSWORD = 'wczwwvftitpmszti'           # App password (without spaces)
+    MAIL_USERNAME = os.getenv('GMAIL_EMAIL')
+    MAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
     ALERT_EMAIL = ''    # Default recipient email
     
     # CCTV Recording Configuration
@@ -157,23 +159,170 @@ def get_user_by_username(username):
     users = load_users()
     return users.get(username)
 
-def get_alert_email():
-    """Get alert email from database """
-    # Try to get current logged-in user's email first
-    if 'username' in session:
-        username = session.get('username')
-        users = load_users()
-        if username in users and users[username].get('email'):
-            return users[username]['email']
-    
-    # Fallback to first available admin user's email
+def get_alert_email(username=None):
+    """
+    Get the email address used for security alerts.
+
+    This function does NOT depend on Flask session,
+    so alerts can be sent even when nobody is logged in.
+    """
+
     users = load_users()
-    for username, user_data in users.items():
+
+    # If a username was explicitly supplied, try that user first
+    if username and username in users:
+        email = users[username].get('email')
+        if email:
+            return email
+
+    # Prefer an admin user's email
+    for user_name, user_data in users.items():
+        if user_data.get('role') == 'admin' and user_data.get('email'):
+            return user_data['email']
+
+    # Otherwise use the first registered user with an email
+    for user_name, user_data in users.items():
         if user_data.get('email'):
             return user_data['email']
-    
-    # Final fallback to config (should never reach here with proper setup)
-    return Config.ALERT_EMAIL or Config.MAIL_USERNAME
+
+    # Optional configured fallback
+    return Config.ALERT_EMAIL or None
+
+def start_alert(alert_type, reason, session_data=None, username=None):
+    """Start an alert incident and send one email for that active alert type.
+
+    An alert type can have only one active email notification at a time.
+    The alert becomes eligible for another email only after resolve_alert()
+    removes it from active_alerts.
+    """
+    global active_alerts
+
+    # Prevent duplicate notifications while this alert type is active.
+    with alert_lock:
+        if alert_type in active_alerts and active_alerts[alert_type].get("active"):
+            logger.info(
+                f"Alert already active: {alert_type}. Email will not be sent again."
+            )
+            return False
+
+        # Reserve the alert type while the SMTP operation is in progress.
+        # If sending fails, the reservation is removed so a later occurrence
+        # can retry the notification.
+        alert_id = str(uuid.uuid4())
+        active_alerts[alert_type] = {
+            "active": True,
+            "alert_id": alert_id,
+            "started_at": datetime.now().isoformat(),
+            "reason": reason,
+            "email_status": "sending"
+        }
+
+    recipient_email = None
+    try:
+        recipient_email = get_alert_email(username=username)
+
+        if not recipient_email:
+            logger.warning(
+                f"No recipient email available for alert: {alert_type}"
+            )
+            with alert_lock:
+                active_alerts.pop(alert_type, None)
+            return False
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        body = f"""AI-IDS SECURITY ALERT
+
+Alert Type:
+{alert_type}
+
+Reason:
+{reason}
+
+Time:
+{timestamp}
+
+Alert ID:
+{alert_id}
+
+Status:
+ACTIVE
+
+The system will not send another email for this alert type
+while the alert remains active.
+
+A new email will be sent after this alert is resolved and
+the same alert type occurs again.
+
+AI-IDS Security System
+"""
+
+        if session_data:
+            body += "\nSession Data:\n" + json.dumps(session_data, indent=2, default=str) + "\n"
+
+        msg = MIMEText(body)
+        msg['Subject'] = f"[AI-IDS] Security Alert - {alert_type}"
+        msg['From'] = Config.MAIL_USERNAME
+        msg['To'] = recipient_email
+
+        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
+            raise RuntimeError("Gmail credentials are not configured")
+
+        with smtplib.SMTP(
+            Config.MAIL_SERVER,
+            Config.MAIL_PORT,
+            timeout=10
+        ) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
+            server.send_message(msg)
+
+        with alert_lock:
+            if alert_type in active_alerts:
+                active_alerts[alert_type]["email_status"] = "sent"
+
+        logger.warning(
+            f"NEW ALERT: {alert_type} - {reason}"
+        )
+        logger.info(
+            f"Alert email sent to {recipient_email}: {alert_type}"
+        )
+        return True
+
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(
+            f"SMTP authentication failed while sending {alert_type}: {e}"
+        )
+    except smtplib.SMTPException as e:
+        logger.error(
+            f"SMTP error while sending {alert_type}: {e}"
+        )
+    except (socket.timeout, socket.gaierror) as e:
+        logger.error(
+            f"SMTP connection error while sending {alert_type}: {e}"
+        )
+    except Exception as e:
+        logger.error(
+            f"Failed to send alert email for {alert_type}: {e}",
+            exc_info=True
+        )
+
+    # Do not leave an alert active when its notification was not sent.
+    with alert_lock:
+        active_alerts.pop(alert_type, None)
+    return False
+
+
+def resolve_alert(alert_type):
+    """Resolve an active alert so the same type can notify again later."""
+    global active_alerts
+
+    with alert_lock:
+        if alert_type in active_alerts:
+            logger.info(f"Alert resolved: {alert_type}")
+            del active_alerts[alert_type]
 
 def generate_otp():
     """Generate a 6-digit OTP"""
@@ -189,125 +338,78 @@ def is_ip_locked_out(ip):
     return False
 
 def send_otp_email(email, otp):
-    """Send OTP to the provided email"""
+    """Send registration OTP to the email entered by the user."""
     try:
-        # Log OTP to console for testing
-        print(f"\n{'='*50}")
-        print(f"OTP GENERATED FOR TESTING")
-        print(f"Email: {email}")
-        print(f"OTP: {otp}")
-        print(f"{'='*50}\n")
-        
-        # For testing, skip email sending to make it faster
-        # Uncomment below lines if you want actual email sending
-        """
-        msg = MIMEText(f'Your OTP for user creation is: {otp}\n\nThis OTP is valid for 5 minutes.')
-        msg['Subject'] = 'Your Verification Code'
+        msg = MIMEText(
+            f"""Hello,
+
+Your AI-IDS registration verification code is:
+
+{otp}
+
+This OTP is valid for 5 minutes.
+
+If you did not request this registration, you can safely ignore this email.
+
+Regards,
+AI-IDS Security System
+"""
+        )
+
+        msg['Subject'] = 'AI-IDS Registration OTP'
         msg['From'] = Config.MAIL_USERNAME
         msg['To'] = email
-        
-        with smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=3) as server:
+
+        with smtplib.SMTP(
+            Config.MAIL_SERVER,
+            Config.MAIL_PORT,
+            timeout=10
+        ) as server:
+
             server.starttls()
-            server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
+            server.login(
+                Config.MAIL_USERNAME,
+                Config.MAIL_PASSWORD
+            )
+
             server.send_message(msg)
-        """
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send OTP email: {e}")
-        # Still return True so testing can continue even if email fails
-        print(f"Email sending failed, but OTP is: {otp}")
+
+        logger.info(f"Registration OTP sent to {email}")
+
         return True
 
+    except Exception as e:
+        logger.error(f"Failed to send OTP email: {e}", exc_info=True)
+        return False
+
 def log_event(event_type, reason, session_id=None, session_data=None, client_ip=None, username=None):
-    """Log an event with timestamp and optional session data"""
+    """Log an event with timestamp and optional session data.
+
+    Email notification is intentionally handled by start_alert()/resolve_alert()
+    so logging an event cannot create duplicate alert emails.
+    """
     timestamp = datetime.now()
     entry = {
         "timestamp": timestamp.isoformat(),
         "event_type": event_type,
         "reason": reason
     }
-    
-    # Add client IP if provided
+
     if client_ip:
         entry["client_ip"] = client_ip
-    
-    # Add session data if provided
+
     if session_id:
         entry["session_id"] = session_id
+
     if session_data:
         entry["session_data"] = session_data
-    
-    # Log to the application log
+
     logger.info(f"Event: {event_type} - {reason}")
-    
-    # Important events that should trigger notifications
-    important_events = [
-        'ALERT', 
-        'OBSTRUCTION_DETECTED', 
-        'MANUAL_ATTACK_TRIGGER', 
-        'INJECT_ATTACK_SESSION',
-        'MOTION_DETECTED',
-        'INTRUSION_DETECTED',
-        'SYSTEM_ALERT',
-        'SECURITY_ALERT'
-    ]
-    
-    is_important_event = any(event in event_type for event in important_events)
-    
-    # Send email notification for important events
-    if is_important_event:
-        try:
-            # Prepare email notification
-            subject = f"🔔 AI-IDS {event_type}"
-            body = f"""
-            <h2>AI-IDS Security Alert</h2>
-            <p><strong>Event Type:</strong> {event_type}</p>
-            <p><strong>Time:</strong> {timestamp.strftime('%Y-%m-%d %H:%M:%S')}</p>
-            <p><strong>Details:</strong> {reason}</p>
-            """
-            
-            # Add session data if available
-            if session_data:
-                body += "<p><strong>Session Data:</strong></p><pre>"
-                body += json.dumps(session_data, indent=2)
-                body += "</pre>"
-            
-            # Send email
-            msg = MIMEText(body, 'html')
-            msg['Subject'] = subject
-            msg['From'] = Config.MAIL_USERNAME
-            
-            # Determine recipient email based on provided username or fallback
-            recipient_email = Config.ALERT_EMAIL
-            if username:
-                users = load_users()
-                user_data = users.get(username)
-                if user_data and user_data.get('email'):
-                    recipient_email = user_data['email']
-            elif 'username' in session: # Fallback to session if available
-                current_session_username = session.get('username')
-                users = load_users()
-                user_data = users.get(current_session_username)
-                if user_data and user_data.get('email'):
-                    recipient_email = user_data['email']
-            
-            msg['To'] = recipient_email
-            
-            with smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=10) as server:
-                server.starttls()
-                server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
-                server.send_message(msg)
-                
-            logger.info(f"Email alert sent for event: {event_type} to {recipient_email}")
-            
-        except Exception as e:
-            logger.error(f"Failed to send email alert: {str(e)}")
-    
-    # Add to detection log (keeps last 100 events)
+
     detection_log.append(entry)
     if len(detection_log) > 100:
         detection_log.pop(0)
-    
+
     return entry
 
 # Global variables
@@ -316,6 +418,8 @@ camera = None
 frame_lock = Lock()
 current_frame = None
 detection_log = []
+active_alerts = {}
+alert_lock = Lock()
 video_writer = None
 video_start_time = None
 frame_count = 0
@@ -323,6 +427,9 @@ recording_enabled = False  # Temporarily disabled to prevent crashes
 last_recording_restart = 0  # Track last restart time
 recording_restart_count = 0  # Count restart attempts
 runtime = {
+    # Used by background CCTV threads because Flask session is unavailable
+    # outside an HTTP request context.
+    "active_username": None,
     "detection_enabled": True,
     "inject_enabled": False,
     "manual_attack": False,
@@ -535,6 +642,9 @@ def login():
             session['email'] = user['email']
             session['role'] = user.get('role', 'user')
             session.permanent = remember_me
+
+            # Preserve the logged-in user for background CCTV alert emails.
+            runtime["active_username"] = username
             
             logger.info(f"User logged in: {username}")
             log_event("LOGIN", f"User {username} logged in", client_ip=request.remote_addr, username=username)
@@ -562,10 +672,14 @@ def login():
 
 @app.route('/logout')
 def logout():
-    # Clear session
+    # Capture username before clearing the Flask session.
+    username = session.get('username')
+
     session.clear()
+    runtime["active_username"] = None
+
     logger.info("User logged out")
-    log_event("LOGOUT", "User logged out", username=session.get('username'))
+    log_event("LOGOUT", "User logged out", username=username)
     return redirect(url_for('login'))
 
 @app.route('/profile')
@@ -1038,32 +1152,34 @@ def video_feed():
 @app.route('/api/start_detection', methods=['POST'])
 @login_required
 def start_detection():
-    if not background_service.running:
-        start_service()
-        return jsonify({"status": "success", "message": "Detection started"})
-    return jsonify({"status": "already_running", "message": "Detection is already running"})
+    runtime["detection_enabled"] = True
+    logger.info("Detection started")
+    return jsonify({
+        "status": "success",
+        "message": "Detection started",
+        "detection_enabled": True
+    })
+
 
 @app.route('/api/stop_detection', methods=['POST'])
 @login_required
 def stop_detection():
-    if background_service.running:
-        stop_service()
-        return jsonify({"status": "success", "message": "Detection stopped"})
-    return jsonify({"status": "not_running", "message": "Detection is not running"})
+    runtime["detection_enabled"] = False
+    logger.info("Detection stopped")
+    return jsonify({
+        "status": "success",
+        "message": "Detection stopped",
+        "detection_enabled": False
+    })
+
 
 @app.route('/api/detection_status', methods=['GET'])
 @login_required
 def detection_status():
     return jsonify({
-        "running": background_service.running,
-        "detection_enabled": background_service.detection_enabled if background_service.running else False
+        "running": runtime["detection_enabled"],
+        "detection_enabled": runtime["detection_enabled"]
     })
-
-# Add this to ensure the service is stopped when the app exits
-@atexit.register
-def cleanup():
-    if background_service.running:
-        stop_service()
 
 @app.route('/api/status', methods=['GET'])
 def status():
@@ -1381,8 +1497,16 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
                 print(f"Reason: {reason}")
                 print("="*60 + "\n")
                 
-                # Send email notification if configured
-                send_notification_email(reason, obstruction_duration, username=None)
+                # Send exactly one email for this active obstruction alert.
+                start_alert(
+                    "CAMERA_OBSTRUCTION",
+                    reason,
+                    session_data={
+                        "duration": obstruction_duration,
+                        "threshold_seconds": 20
+                    },
+                    username=None
+                )
         
         return True
     else:
@@ -1410,6 +1534,9 @@ def handle_obstruction_timing(is_obstructed, reason, frame, current_time):
                 log_event("OBSTRUCTION_SESSION", f"Camera obstruction: {start_time} - {end_time} ({obstruction_duration:.1f}s)", session_data=summary_data, username=None)
                 runtime["session_logged"] = True  # Mark as logged to prevent duplicates
             
+            # Resolve the alert so a future obstruction can generate a new email.
+            resolve_alert("CAMERA_OBSTRUCTION")
+
             # Reset all obstruction tracking variables
             runtime["obstruction_start_time"] = None
             runtime["obstruction_notified"] = False
@@ -1429,6 +1556,13 @@ def handle_manual_attack_timing(is_manual_attack, current_time):
             runtime["manual_attack_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["manual_attack_logged"] = False
             logger.info("Manual attack detected - starting session")
+
+            # Send one email for this active manual-attack incident.
+            start_alert(
+                "MANUAL_ATTACK",
+                "Manual attack triggered",
+                username=None
+            )
         return True
     else:
         # Reset manual attack timer if attack is no longer active
@@ -1454,6 +1588,9 @@ def handle_manual_attack_timing(is_manual_attack, current_time):
                 log_event("MANUAL_ATTACK_SESSION", f"Manual attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=None)
                 runtime["manual_attack_logged"] = True  # Mark as logged to prevent duplicates
             
+            # Resolve the alert so a future manual attack can generate a new email.
+            resolve_alert("MANUAL_ATTACK")
+
             # Reset all manual attack tracking variables
             runtime["manual_attack_start_time"] = None
             runtime["manual_attack_session_id"] = None
@@ -1470,6 +1607,13 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
             runtime["inject_attack_session_id"] = datetime.now().strftime("%Y%m%d_%H%M%S")
             runtime["inject_attack_logged"] = False
             logger.info("Inject attack detected - starting session")
+
+            # Send one email for this active video-injection incident.
+            start_alert(
+                "VIDEO_INJECTION",
+                "Video injection attack detected",
+                username=None
+            )
         return True
     else:
         # Reset inject attack timer if attack is no longer active
@@ -1495,136 +1639,15 @@ def handle_inject_attack_timing(is_inject_attack, current_time):
                 log_event("INJECT_ATTACK_SESSION", f"Inject attack: {start_time} - {end_time} ({attack_duration:.1f}s)", session_data=summary_data, username=None)
                 runtime["inject_attack_logged"] = True  # Mark as logged to prevent duplicates
             
+            # Resolve the alert so a future injection attack can generate a new email.
+            resolve_alert("VIDEO_INJECTION")
+
             # Reset all inject attack tracking variables
             runtime["inject_attack_start_time"] = None
             runtime["inject_attack_session_id"] = None
             runtime["inject_attack_logged"] = False
         
-def send_notification_email(reason, duration, username=None):
-    """Send email notification about security events"""
-    import smtplib
-    import socket
-    from email.mime.text import MIMEText
-    
-    try:
-        logger.info("Starting email notification process...")
-        
-        # Check if email is configured
-        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
-            # Fallback to environment variables if not set in Config
-            Config.MAIL_USERNAME = os.getenv('GMAIL_EMAIL', Config.MAIL_USERNAME)
-            Config.MAIL_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', Config.MAIL_PASSWORD)
-
-        logger.info(f"Using email: {Config.MAIL_USERNAME}")
-        
-        if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
-            error_msg = "Email credentials not configured - notification not sent"
-            logger.warning(error_msg)
-            return False
-            
-        # Determine recipient email based on provided username or fallback
-        recipient_email = Config.ALERT_EMAIL
-        if username:
-            users = load_users()
-            user_data = users.get(username)
-            if user_data and user_data.get('email'):
-                recipient_email = user_data['email']
-        elif 'username' in session: # Fallback to session if available
-            current_session_username = session.get('username')
-            users = load_users()
-            user_data = users.get(current_session_username)
-            if user_data and user_data.get('email'):
-                recipient_email = user_data['email']
-
-        if not recipient_email:
-            error_msg = "No alert email configured - notification not sent"
-            logger.warning(error_msg)
-            return False
-
-        # Prepare email notification
-        subject = f"[AI-IDS] Security Alert - {reason}"
-        body = f"""
-        Security Alert!
-
-        Type: {reason}
-        Duration: {duration:.0f} seconds
-        Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-        Please check the system immediately.
-
-        --
-        AI Intrusion Detection System
-        """
-
-        # Create message
-        msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = Config.MAIL_USERNAME
-        msg['To'] = recipient_email
-
-        # Send email using Gmail SMTP with detailed logging
-        logger.info(f"Attempting to connect to {Config.MAIL_SERVER}:{Config.MAIL_PORT}")
-        
-        try:
-            # Create connection with timeout
-            server = smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=10)
-            logger.info("SMTP connection established")
-            
-            # Enable debug output
-            server.set_debuglevel(1)
-            
-            # Start TLS
-            logger.info("Starting TLS...")
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
-            
-            # Login
-            logger.info("Attempting to login...")
-            server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
-            logger.info("Login successful")
-            
-            # Send email
-            logger.info("Sending email...")
-            server.send_message(msg)
-            logger.info(f"Email notification sent to {recipient_email}")
-            
-            # Quit server
-            server.quit()
-            return True
-            
-        except smtplib.SMTPAuthenticationError as e:
-            error_msg = f"SMTP Authentication Error: {str(e)}. Please check your email and app password."
-            logger.error(error_msg)
-        except smtplib.SMTPException as e:
-            error_msg = f"SMTP Error: {str(e)}"
-            logger.error(error_msg)
-        except socket.timeout as e:
-            error_msg = f"Connection timeout: {str(e)}. Check your internet connection and firewall settings."
-            logger.error(error_msg)
-        except socket.gaierror as e:
-            error_msg = f"Address-related error: {str(e)}. Check your SMTP server and port."
-            logger.error(error_msg)
-        except Exception as e:
-            error_msg = f"Unexpected error: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            
-        return False
-        
-    except Exception as e:
-        error_msg = f"Fatal error in send_notification_email: {str(e)}"
-        logger.error(error_msg, exc_info=True)
-        return False
-    
-    # Photo capture disabled - not saving frames
-    
-    detection_log.append(entry)
-    
-    # Keep only last 100 events
-    if len(detection_log) > 100:
-        detection_log.pop(0)
-    
-    logger.info(f"Event logged: {event_type} - {reason}")
+# Email notifications for security incidents are handled by start_alert().
 
 # Frame generation and processing
 def gen_frames():
@@ -1748,89 +1771,96 @@ def cleanup():
     release_camera()
     logger.info("Application shutting down")
 
-# Add a simple test route at the end of the file
-
+# Email test routes
 @app.route('/test-email', methods=['GET'])
-@app.route('/api/test-email', methods=['GET'])  # Alternative endpoint
+@app.route('/api/test-email', methods=['GET'])
 def test_email_route():
-    """Test email sending functionality"""
+    """Send a direct test email to the current user's registered email."""
     try:
-        # Test email configuration
+        recipient_email = get_alert_email()
+
         logger.info("\n=== Starting Email Test ===")
         logger.info(f"Sender email: {Config.MAIL_USERNAME}")
-        logger.info(f"Recipient email: {Config.ALERT_EMAIL}")
+        logger.info(f"Recipient email: {recipient_email}")
         logger.info(f"SMTP Server: {Config.MAIL_SERVER}:{Config.MAIL_PORT}")
         logger.info(f"Using TLS: {Config.MAIL_USE_TLS}")
-        
-        # Verify email configuration
+
         if not Config.MAIL_USERNAME or not Config.MAIL_PASSWORD:
-            error_msg = "Email username or password not configured"
-            logger.error(error_msg)
-            return error_msg
-            
-        if not Config.ALERT_EMAIL:
-            error_msg = "No recipient email configured"
-            logger.error(error_msg)
-            return error_msg
-        
-        logger.info("Configuration check passed. Attempting to send test email...")
-        
-        # Test sending email with more context
+            return "Gmail username or app password is not configured", 500
+
+        if not recipient_email:
+            return "No registered user email is available for the alert", 500
+
+        msg = MIMEText(
+            "This is a test email from the AI-IDS notification system.\n\n"
+            "Your Gmail SMTP configuration is working correctly."
+        )
+        msg['Subject'] = '[AI-IDS] Email Configuration Test'
+        msg['From'] = Config.MAIL_USERNAME
+        msg['To'] = recipient_email
+
         start_time = time.time()
-        success = send_notification_email("Test Alert - AI-IDS System", 5)
+        with smtplib.SMTP(Config.MAIL_SERVER, Config.MAIL_PORT, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
+            server.send_message(msg)
+
         elapsed = time.time() - start_time
-        
-        if success:
-            logger.info(f"Test email sent successfully in {elapsed:.2f} seconds!")
-            return "Test email sent successfully! Please check your inbox (and spam folder)."
-        else:
-            error_msg = "Failed to send test email - check server logs for details"
-            logger.error(error_msg)
-            return error_msg
-            
-    except smtplib.SMTPAuthenticationError as e:
-        error_msg = f"SMTP Authentication Error: {str(e)}\nPlease check your email and app password."
-        logger.error(error_msg, exc_info=True)
-        return error_msg
+        logger.info(f"Test email sent successfully in {elapsed:.2f} seconds!")
+        return f"Test email sent successfully to {recipient_email}."
+
+    except smtplib.SMTPAuthenticationError:
+        logger.error("SMTP authentication failed. Check Gmail and the App Password.", exc_info=True)
+        return "SMTP authentication failed. Check your Gmail address and App Password.", 500
     except smtplib.SMTPException as e:
-        error_msg = f"SMTP Error: {str(e)}"
-        logger.error(error_msg, exc_info=True)
-        return error_msg
-    except socket.timeout as e:
-        error_msg = f"Connection timeout: {str(e)}\nCheck your internet connection and firewall settings."
-        logger.error(error_msg, exc_info=True)
-        return error_msg
-    except socket.gaierror as e:
-        error_msg = f"Address-related error: {str(e)}\nCheck your SMTP server and port settings."
-        logger.error(error_msg, exc_info=True)
-        return error_msg
+        logger.error(f"SMTP Error: {e}", exc_info=True)
+        return f"SMTP error: {e}", 500
+    except (socket.timeout, socket.gaierror) as e:
+        logger.error(f"SMTP connection error: {e}", exc_info=True)
+        return f"SMTP connection error: {e}", 500
     except Exception as e:
-        error_msg = f"Unexpected error: {str(e)}"
-        logger.error(error_msg, exc_info=True)
-        return error_msg
+        logger.error(f"Unexpected email test error: {e}", exc_info=True)
+        return f"Email test failed: {e}", 500
+
 
 @app.route('/test-email-alert')
 def test_email_alert():
-    """Test endpoint to trigger an email alert"""
+    """Trigger the normal de-duplicated alert-email path."""
     try:
-        # Log a test event which will trigger email notification
-        log_event(
-            event_type="TEST_ALERT",
-            reason="This is a test alert to verify email notifications are working.",
-            session_data={"test": True, "timestamp": datetime.now().isoformat()}
+        success = start_alert(
+            "TEST_ALERT",
+            "This is a test alert to verify AI-IDS alert notifications are working."
         )
-        
+
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": "Test alert email sent. Repeating this endpoint will not send another email until TEST_ALERT is resolved."
+            }), 200
+
         return jsonify({
-            "status": "success",
-            "message": "Test alert triggered. Please check your email."
-        }), 200
-        
+            "status": "already_active_or_failed",
+            "message": "Test alert is already active or the email could not be sent."
+        }), 500
+
     except Exception as e:
-        logger.error(f"Error in test_email_alert: {str(e)}")
+        logger.error(f"Error in test_email_alert: {str(e)}", exc_info=True)
         return jsonify({
             "status": "error",
             "message": f"Failed to send test alert: {str(e)}"
         }), 500
+
+
+@app.route('/resolve-test-email-alert')
+def resolve_test_email_alert():
+    """Resolve the test alert so it can send again on the next test."""
+    resolve_alert("TEST_ALERT")
+    return jsonify({
+        "status": "success",
+        "message": "TEST_ALERT resolved. The next test alert can send a new email."
+    })
 
 if __name__ == '__main__':
     # Initialize AI-IDS system (camera will be started after login)

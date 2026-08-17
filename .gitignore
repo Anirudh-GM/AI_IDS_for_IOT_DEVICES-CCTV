@@ -76,3 +76,4 @@ instance/
 .env
 .env.local
 .env.*.local
+users.json
